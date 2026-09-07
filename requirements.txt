@@ -1,0 +1,17 @@
+# Core (verified present in the dev environment)
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+statsmodels>=0.14
+jsonschema>=4.0
+pyyaml>=6.0
+matplotlib>=3.7
+
+# Optional real-model backends
+anthropic>=0.40        # AnthropicBackend / AnthropicJudge (needs ANTHROPIC_API_KEY)
+
+# Recommended upgrades for a publication run (not required for the mock pipeline):
+# - CheXbert / CheXpert-labeler  -> replace src/labeling.py rule-based labeler
+# - radgraph                     -> replace lexicon claim extraction in eval_groundedness.py
+# - pytest                       -> test runner
