@@ -1,0 +1,35 @@
+# MedGemma 4B — local Apple-Silicon run via MLX (no API, no cost, fully on-device).
+# Medically fine-tuned VLM; the 5 pre-registered prompts run on the same manifests.
+# max_workers MUST be 1 — MLX is not thread-safe (it parallelizes internally).
+seed: 20260705
+
+paths:
+  archive:      "../archive"
+  reports_csv:  "../archive/indiana_reports.csv"
+  proj_csv:     "../archive/indiana_projections.csv"
+  images_dir:   "../archive/images/images_normalized"
+  out_dir:      "results"
+
+dataset:
+  strata_targets: {easy_normal: 150, easy_abnormal: 150, intermediate: 150,
+                   hard_multi: 150, ambiguous: 150, rare: 100}
+  dev_fraction: 0.18
+  require_findings: true
+
+inference:
+  backend: "medgemma"
+  model_id: "mlx-community/medgemma-4b-it-8bit"
+  temperature: 0.0
+  max_output_tokens: 1024
+  medgemma_images: 1                # frontal only (4B is most reliable with 1 image)
+  max_workers: 1                    # REQUIRED: MLX is not thread-safe
+  prompts: ["direct", "cot", "ddx", "evidence_first", "uncertainty_first"]
+  mock: {base_accuracy: 0.72, hallucination_rate: 0.15, miscalibration: 0.12}
+
+judge:
+  backend: "gemini"
+  models: ["gemini-2.5-flash"]
+  max_workers: 8
+  swap_positions: true
+
+stats: {n_bootstrap: 10000, ece_bins: 15, fdr_alpha: 0.05}
