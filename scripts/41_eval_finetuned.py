@@ -24,12 +24,38 @@ from src.normalize import normalize_dx
 
 FINDABLE = [c for c in CHEXPERT_CLASSES if c != "No Finding"]
 # MUST match scripts/40_finetune_medgemma.INSTRUCTION exactly (train/eval parity).
-INSTRUCTION = (
+INSTRUCTION_LIST = (
     "You are a radiologist reading a chest radiograph. Decide which of the following "
     "findings are present: " + ", ".join(FINDABLE) + ". "
     "Reply with only the present findings by name, separated by semicolons, or "
     "'No acute cardiopulmonary finding' if none are present."
 )
+INSTRUCTION_SLOTS = (
+    "You are a radiologist reading a chest radiograph. For EACH of the following "
+    "findings, answer yes or no. Answer for every finding, in this exact order, one "
+    "per line, in the form 'Finding: yes' or 'Finding: no'. Do not add any other text.\n"
+    + "\n".join(FINDABLE)
+)
+
+
+def instruction(fmt):
+    return INSTRUCTION_SLOTS if fmt == "slots" else INSTRUCTION_LIST
+
+
+def parse_slots(text):
+    """Must mirror 40_finetune_medgemma.parse_slots exactly."""
+    out = set()
+    for line in str(text).splitlines():
+        if ":" not in line:
+            continue
+        name, _, val = line.partition(":")
+        name = name.strip().lower()
+        for c in FINDABLE:
+            if name == c.lower() and val.strip().lower().startswith("yes"):
+                out.add(c)
+    return out
+
+
 ALL = FINDABLE
 
 
@@ -41,7 +67,7 @@ def micro(yt, yp):
     return p, r, (2 * p * r / (p + r) if p + r else 0.0)
 
 
-def run_inference(adapter, model_id, uids, studies, limit):
+def run_inference(adapter, model_id, uids, studies, limit, fmt="slots"):
     from mlx_vlm import load, generate
     from mlx_vlm.prompt_utils import apply_chat_template
     model, processor = load(model_id, adapter_path=adapter,
@@ -51,12 +77,14 @@ def run_inference(adapter, model_id, uids, studies, limit):
     for i, uid in enumerate(uids):
         r = studies.loc[uid]
         paths = [p for p in (r["frontal_paths"] or []) if p and os.path.exists(p)][:1]
-        messages = [{"role": "user", "content": INSTRUCTION}]
+        messages = [{"role": "user", "content": instruction(fmt)}]
         prompt = apply_chat_template(processor, config, messages, num_images=len(paths))
         out = generate(model, processor, prompt, image=paths or None,
-                       max_tokens=128, temperature=0.0, verbose=False)
+                       max_tokens=256 if fmt == "slots" else 128, temperature=0.0, verbose=False)
         raw = out.text if hasattr(out, "text") else str(out)
-        pos = {c for c in normalize_dx(raw) if c != "No Finding"}
+        # slots: parse the fixed frame; list: fall back to the prose normaliser
+        pos = parse_slots(raw) if fmt == "slots" else {c for c in normalize_dx(raw)
+                                                       if c != "No Finding"}
         findings = {c: {"presence": "present", "confidence": 80} for c in pos}
         primary = sorted(pos)[0] if pos else "No acute cardiopulmonary finding"
         rows.append({"uid": uid, "prompt_condition": "medgemma_ft",
@@ -90,6 +118,8 @@ def main():
     ap.add_argument("--adapter", default="results/adapters/medgemma_det")
     ap.add_argument("--model", default="mlx-community/medgemma-4b-it-8bit")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--target-format", choices=["slots","list"], default="slots",
+                    help="MUST match what the adapter was trained with")
     ap.add_argument("--out-suffix", default="medgemma_ft")
     args = ap.parse_args()
     cfg = load_cfg("configs/config_medgemma_estr.yaml")
@@ -102,7 +132,8 @@ def main():
     if args.limit:
         uids = uids[:args.limit]
     print(f"Fine-tuned inference on {len(uids)} test studies (adapter={args.adapter})...")
-    pred = run_inference(args.adapter, args.model, uids, studies, args.limit)
+    pred = run_inference(args.adapter, args.model, uids, studies, args.limit,
+                         fmt=args.target_format)
     pred.to_csv(os.path.join(out, f"predictions_test_{args.out_suffix}.csv"), index=False)
     print(f"Wrote predictions_test_{args.out_suffix}.csv\n")
     # comparison

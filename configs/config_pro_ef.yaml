@@ -1,0 +1,40 @@
+# Perception-ceiling pilot: evidence_first on gemini-2.5-pro at FULL resolution.
+# Tests whether better perception (bigger model + full-detail image) raises the
+# fine-grained 13-class score — the two-stage result localized the ceiling to
+# perception, so this is the one legitimate lever that could move it.
+# NOTE: pro requires thinking (thinking_budget:-1), so hidden CoT is ON — fine for
+# a perception test, but not a clean direct-vs-cot prompt contrast.
+seed: 20260705
+
+paths:
+  archive:      "../archive"
+  reports_csv:  "../archive/indiana_reports.csv"
+  proj_csv:     "../archive/indiana_projections.csv"
+  images_dir:   "../archive/images/images_normalized"
+  out_dir:      "results"
+
+dataset:
+  strata_targets: {easy_normal: 150, easy_abnormal: 150, intermediate: 150,
+                   hard_multi: 150, ambiguous: 150, rare: 100}
+  dev_fraction: 0.18
+  require_findings: true
+
+inference:
+  backend: "gemini"
+  model_id: "gemini-2.5-pro"
+  temperature: 0.0
+  image_max_side: 0                 # 0 = FULL resolution
+  max_output_tokens: 2048
+  media_resolution: "MEDIA_RESOLUTION_HIGH"
+  thinking_budget: -1               # pro requires thinking; -1 = dynamic
+  max_workers: 8
+  prompts: ["evidence_first"]
+  mock: {base_accuracy: 0.72, hallucination_rate: 0.15, miscalibration: 0.12}
+
+judge:
+  backend: "gemini"
+  models: ["gemini-2.5-flash"]
+  max_workers: 8
+  swap_positions: true
+
+stats: {n_bootstrap: 10000, ece_bins: 15, fdr_alpha: 0.05}

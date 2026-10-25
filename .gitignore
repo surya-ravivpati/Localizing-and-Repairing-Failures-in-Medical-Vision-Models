@@ -1,0 +1,13 @@
+# Generated outputs, model features and adapters (multi-GB) -- never committed
+results/
+data/
+
+# Secrets
+.env
+.env.local
+
+# Python / OS noise
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

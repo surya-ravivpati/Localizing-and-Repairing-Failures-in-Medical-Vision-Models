@@ -1,0 +1,57 @@
+# EXPERIMENT 1 — Visual Information Preservation Ablation (Gemini arm).
+#
+# Varies ONLY the visual input across four conditions (baseline / higher-resolution
+# / multi-crop / oracle). Model, prompts, reasoning procedure, dataset and scoring
+# are held constant; the image parts themselves are pre-rendered to disk by
+# scripts/37_build_image_variants.py and selected with 35_run_twostage.py
+# --image-variant.
+#
+# Two settings here are load-bearing for the experiment's validity:
+#   image_max_side: 0   -> raw-bytes passthrough. Every arm then takes the IDENTICAL
+#                          code path through inference._load_image_bytes; all resizing
+#                          and cropping happens in src/imaging.py where it is
+#                          inspectable. (max_side>0 would re-encode, giving the arms
+#                          different encode paths.)
+#   media_resolution    -> set on ALL arms, not just the high-res one. It is a
+#                          request-global knob with no per-part control, so varying it
+#                          alongside pixel count would confound "more pixels" with
+#                          "more server-side tiling". Held constant, the only variable
+#                          is what is on disk.
+#
+# Because media_resolution is set here and was NOT set for the historical two-stage
+# run, results/predictions_test_twostage_stage{A,B}.csv are NOT a valid arm-A
+# comparator. Arm A is re-run; the historical files stay untouched as a drift check.
+seed: 20260705
+
+paths:
+  archive:      "../archive"
+  reports_csv:  "../archive/indiana_reports.csv"
+  proj_csv:     "../archive/indiana_projections.csv"
+  images_dir:   "../archive/images/images_normalized"
+  out_dir:      "results"
+
+dataset:
+  strata_targets: {easy_normal: 150, easy_abnormal: 150, intermediate: 150,
+                   hard_multi: 150, ambiguous: 150, rare: 100}
+  dev_fraction: 0.18
+  require_findings: true
+
+inference:
+  backend: "gemini"
+  model_id: "gemini-2.5-flash"
+  temperature: 0.0
+  image_max_side: 0                        # see header — raw passthrough
+  media_resolution: "MEDIA_RESOLUTION_HIGH"  # see header — constant across arms
+  max_output_tokens: 2048
+  thinking_budget: 0                       # no hidden CoT; our prompt is the scaffold
+  max_workers: 8
+  prompts: ["perception_only"]             # 35_run_twostage overrides for Stage A
+  mock: {base_accuracy: 0.72, hallucination_rate: 0.15, miscalibration: 0.12}
+
+judge:
+  backend: "gemini"
+  models: ["gemini-2.5-flash"]
+  max_workers: 8
+  swap_positions: true
+
+stats: {n_bootstrap: 10000, ece_bins: 15, fdr_alpha: 0.05}

@@ -37,21 +37,64 @@ from mlx_vlm.trainer.utils import (find_all_linear_names, get_peft_model,
                                    print_trainable_parameters)
 
 FINDABLE = [c for c in CHEXPERT_CLASSES if c != "No Finding"]
-INSTRUCTION = (
+INSTRUCTION_LIST = (
     "You are a radiologist reading a chest radiograph. Decide which of the following "
     "findings are present: " + ", ".join(FINDABLE) + ". "
     "Reply with only the present findings by name, separated by semicolons, or "
     "'No acute cardiopulmonary finding' if none are present."
 )
 
+INSTRUCTION_SLOTS = (
+    "You are a radiologist reading a chest radiograph. For EACH of the following "
+    "findings, answer yes or no. Answer for every finding, in this exact order, one "
+    "per line, in the form 'Finding: yes' or 'Finding: no'. Do not add any other text.\n"
+    + "\n".join(FINDABLE)
+)
 
-def target_text(row) -> str:
-    """CheXbert-positive findings as canonical names (recoverable by normalize_dx)."""
-    pos = [c for c in FINDABLE if row.get(f"lblcx_{c}") == 1.0]
-    return "; ".join(pos) if pos else "No acute cardiopulmonary finding"
+
+def instruction(fmt: str) -> str:
+    return INSTRUCTION_SLOTS if fmt == "slots" else INSTRUCTION_LIST
 
 
-def build_records(cfg, limit, seed, normal_ratio=None):
+def target_text(row, fmt: str = "slots") -> str:
+    """The training target.
+
+    fmt="list" is the ORIGINAL format and the reason three runs collapsed:
+        abnormal -> "Cardiomegaly; Pleural Effusion"
+        normal   -> "No acute cardiopulmonary finding"
+    The normal case is a single short memorizable string and was 68.3% of the
+    train pool, so emitting it unconditionally is near loss-optimal. Class
+    balancing reduces how OFTEN that string appears but does not remove the
+    basin -- the cheap win is still available on every example.
+
+    fmt="slots" (default) removes the basin structurally: every target is the
+    SAME 13 lines, one per finding, so "all no" costs 13 token-level decisions
+    rather than one short string, and a missed finding is a wrong token inside a
+    fixed frame rather than a shorter sequence. It also matches the output shape
+    that is known to be learnable from these features -- the linear probe does
+    exactly these 13 independent binary decisions and reaches F1 ~0.47-0.51.
+    """
+    pos = {c for c in FINDABLE if row.get(f"lblcx_{c}") == 1.0}
+    if fmt == "list":
+        return "; ".join(c for c in FINDABLE if c in pos) or "No acute cardiopulmonary finding"
+    return "\n".join(f"{c}: {'yes' if c in pos else 'no'}" for c in FINDABLE)
+
+
+def parse_slots(text: str) -> set:
+    """Inverse of target_text(fmt='slots'); tolerant of case and stray prose."""
+    out = set()
+    for line in str(text).splitlines():
+        if ":" not in line:
+            continue
+        name, _, val = line.partition(":")
+        name = name.strip().lower()
+        for c in FINDABLE:
+            if name == c.lower() and val.strip().lower().startswith("yes"):
+                out.add(c)
+    return out
+
+
+def build_records(cfg, limit, seed, normal_ratio=None, fmt="slots"):
     """Plain list of {image-path, pre-formatted messages}; no HF `datasets` dep
     (its pyarrow stack hangs on import here). VisionDataset only needs len()+[idx],
     and mlx_vlm loads image paths lazily per item — so memory stays flat.
@@ -78,15 +121,17 @@ def build_records(cfg, limit, seed, normal_ratio=None):
             continue
         recs.append({
             "image": paths[0],
-            "messages": [{"role": "user", "content": INSTRUCTION},
-                         {"role": "assistant", "content": target_text(r)}],
+            "messages": [{"role": "user", "content": instruction(fmt)},
+                         {"role": "assistant", "content": target_text(r, fmt)}],
+            "_abnormal": any(r.get(f"lblcx_{c}") == 1.0 for c in FINDABLE),
         })
     rng = random.Random(seed)
     rng.shuffle(recs)
     if normal_ratio is not None:
-        NORMAL = "No acute cardiopulmonary finding"
-        abn = [r for r in recs if r["messages"][1]["content"] != NORMAL]
-        nrm = [r for r in recs if r["messages"][1]["content"] == NORMAL]
+        # label-based, not string-based: in slots format no target equals the
+        # old "No acute..." string, so a string test would call everything abnormal
+        abn = [r for r in recs if r["_abnormal"]]
+        nrm = [r for r in recs if not r["_abnormal"]]
         keep = int(round(normal_ratio * len(abn)))
         recs = abn + nrm[:keep]
         rng.shuffle(recs)
@@ -107,6 +152,9 @@ def main():
     ap.add_argument("--max-seq-length", type=int, default=1024)
     ap.add_argument("--resize", type=int, default=0, help="square image resize (0=native)")
     ap.add_argument("--grad-checkpoint", action="store_true", default=True)
+    ap.add_argument("--target-format", choices=["slots","list"], default="slots",
+                    help="slots = fixed 13-line yes/no frame (removes the majority-string "
+                         "basin that collapsed runs 1-3); list = the original format")
     ap.add_argument("--normal-ratio", type=float, default=None,
                     help="cap normal studies at this multiple of the abnormal count "
                          "(1.0 = balanced). Unset reproduces the collapsed run.")
@@ -116,7 +164,7 @@ def main():
     cfg = load_cfg("configs/config_medgemma_estr.yaml")
     print("Building training set (train pool = studies not in test/dev)...", flush=True)
     ds = build_records(cfg, args.limit, cfg.get("seed", 20260705),
-                       normal_ratio=args.normal_ratio)
+                       normal_ratio=args.normal_ratio, fmt=args.target_format)
     print(f"  {len(ds)} training examples | e.g. target: "
           f"{ds[0]['messages'][1]['content']!r}", flush=True)
 

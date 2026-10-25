@@ -1,0 +1,44 @@
+# RadLLM prompt-eval pipeline configuration.
+# One config == one experiment. Commit alongside results.
+
+seed: 20260705
+
+paths:
+  archive:      "../archive"                 # relative to pipeline/
+  reports_csv:  "../archive/indiana_reports.csv"
+  proj_csv:     "../archive/indiana_projections.csv"
+  images_dir:   "../archive/images/images_normalized"
+  out_dir:      "results"
+
+dataset:
+  # Balanced sampling targets per difficulty stratum for the locked test set.
+  strata_targets:
+    easy_normal:        150
+    easy_abnormal:      150
+    intermediate:       150
+    hard_multi:         150
+    ambiguous:          150
+    rare:               100
+  dev_fraction: 0.18        # held-out for prompt/rubric/judge tuning only
+  require_findings: true    # drop reports with empty findings AND impression
+
+inference:
+  backend: "mock"           # mock | anthropic
+  model_id: "mock-vlm-0"    # or e.g. claude-opus-4-8 for anthropic backend
+  temperature: 0.0
+  prompts: ["direct", "cot", "ddx", "evidence_first", "uncertainty_first"]
+  # mock backend behaviour (test harness only — simulates an imperfect model)
+  mock:
+    base_accuracy: 0.72
+    hallucination_rate: 0.15
+    miscalibration: 0.12    # confidence inflation added to positive preds
+
+judge:
+  backend: "mock"           # mock | anthropic
+  models: ["mock-judge-a", "mock-judge-b"]
+  swap_positions: true
+
+stats:
+  n_bootstrap: 10000
+  ece_bins: 15
+  fdr_alpha: 0.05
