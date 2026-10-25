@@ -1,0 +1,278 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Complete results — Radiology VLM prompt & model study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg:#f4f3ef; --surface:#fff; --surface-2:#faf9f6;
+    --ink:#191c20; --muted:#5b6570; --faint:#8b95a1;
+    --hair:#dcdfe3; --hair-strong:#c4c9cf;
+    --accent:#0f766e; --gemini:#7c5cff; --medg:#0f766e;
+    --warn:#b45309; --good:#15803d;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0d1013; --surface:#15191e; --surface-2:#12161b;
+    --ink:#e7ebef; --muted:#9aa4b0; --faint:#6c7783;
+    --hair:#262c33; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gemini:#a48bff; --medg:#2dd4bf; --warn:#f59e0b; --good:#4ade80;}}
+  :root[data-theme="light"]{
+    --bg:#f4f3ef; --surface:#fff; --surface-2:#faf9f6;
+    --ink:#191c20; --muted:#5b6570; --faint:#8b95a1;
+    --hair:#dcdfe3; --hair-strong:#c4c9cf;
+    --accent:#0f766e; --gemini:#7c5cff; --medg:#0f766e; --warn:#b45309; --good:#15803d;}
+  :root[data-theme="dark"]{
+    --bg:#0d1013; --surface:#15191e; --surface-2:#12161b;
+    --ink:#e7ebef; --muted:#9aa4b0; --faint:#6c7783;
+    --hair:#262c33; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gemini:#a48bff; --medg:#2dd4bf; --warn:#f59e0b; --good:#4ade80;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);
+    line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px 96px;}
+  .masthead{border-bottom:2px solid var(--ink);margin-top:40px;padding-bottom:10px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;}
+  .masthead .brand{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);}
+  .masthead .status{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);}
+  h1{font-family:var(--sans);font-weight:620;font-size:clamp(27px,4.6vw,40px);
+    line-height:1.08;letter-spacing:-.02em;text-wrap:balance;margin:32px 0 10px;}
+  .dek{font-size:19px;color:var(--muted);font-style:italic;text-wrap:balance;margin:0 0 6px;}
+  .byline{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.04em;
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--hair);}
+  /* legend + toc */
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--sans);font-size:13px;
+    margin:20px 0 6px;color:var(--muted);}
+  .legend .k{display:inline-flex;align-items:center;gap:7px;}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  h2{font-family:var(--sans);font-weight:600;font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);margin:50px 0 4px;
+    display:flex;align-items:baseline;gap:10px;}
+  h2 .n{font-family:var(--mono);color:var(--faint);font-size:12px;}
+  .sub{font-family:var(--sans);font-size:14.5px;color:var(--muted);margin:6px 0 4px;max-width:70ch;}
+  p{margin:11px 0;} a{color:var(--accent);}
+  code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);
+    border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+  .tbl-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--hair);border-radius:10px;}
+  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;
+    font-variant-numeric:tabular-nums;}
+  caption{caption-side:bottom;text-align:left;font-family:var(--sans);font-size:12px;
+    color:var(--muted);padding:10px 14px 2px;line-height:1.5;}
+  th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--hair);}
+  thead th{color:var(--muted);font-weight:600;font-size:10.5px;letter-spacing:.02em;
+    text-transform:uppercase;border-bottom:1.5px solid var(--hair-strong);}
+  tbody tr:last-child td{border-bottom:none;}
+  th.lbl,td.lbl{text-align:left;font-family:var(--sans);font-weight:540;color:var(--ink);}
+  .modrow td{background:var(--surface-2);font-family:var(--sans);font-weight:640;font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;text-align:left;}
+  .modrow.g td{color:var(--gemini);} .modrow.m td{color:var(--medg);}
+  td.best{color:var(--accent);font-weight:700;}
+  td.up{color:var(--good);font-weight:700;} td.dn{color:var(--warn);font-weight:700;}
+  .sig{color:var(--good);font-weight:700;} .ns{color:var(--faint);}
+  .hgroup td{border-top:1.5px solid var(--hair-strong);}
+  .note{font-family:var(--sans);font-size:13px;color:var(--muted);background:var(--surface-2);
+    border:1px solid var(--hair);border-left:3px solid var(--accent);border-radius:8px;
+    padding:12px 15px;margin:16px 0;line-height:1.55;}
+  .hyp{display:grid;grid-template-columns:auto 1fr auto;gap:2px 16px;font-family:var(--sans);
+    font-size:14.5px;margin:14px 0;align-items:baseline;}
+  .hyp .id{font-family:var(--mono);font-weight:700;color:var(--accent);}
+  .hyp .v{justify-self:end;font-family:var(--mono);font-size:12px;font-weight:600;padding:2px 9px;
+    border-radius:20px;white-space:nowrap;}
+  .hyp .yes{color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent);}
+  .hyp .no{color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);}
+  .hyp .claim{color:var(--ink);} .hyp .why{grid-column:2/4;color:var(--muted);font-size:13px;
+    margin:0 0 10px;line-height:1.45;}
+  .foot{font-family:var(--sans);font-size:12.5px;color:var(--faint);margin-top:44px;
+    padding-top:16px;border-top:1px solid var(--hair);line-height:1.6;}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <span class="brand">Working paper · Radiology AI · results appendix</span>
+    <span class="status">complete · n = 754</span>
+  </div>
+
+  <h1>Complete results: prompt format &amp; model choice in radiology VLMs</h1>
+  <p class="dek">Every metric, both models, five prompts — the full quantitative record behind the paper.</p>
+  <p class="byline">gemini-2.5-flash (API, general) · MedGemma-4B-8bit (local, medical) · IU X-Ray test, n = 754 · CheXbert reference · hierarchy-aware · uncertain = positive · fully paired</p>
+
+  <div class="legend">
+    <span class="k"><span class="swatch" style="background:var(--gemini)"></span> Gemini — general, API</span>
+    <span class="k"><span class="swatch" style="background:var(--medg)"></span> MedGemma — medical, local</span>
+    <span class="k"><span class="swatch" style="background:var(--good)"></span> significant / improved</span>
+    <span class="k"><span class="swatch" style="background:var(--warn)"></span> worsened</span>
+  </div>
+  <p class="sub">All F1 values are micro-averaged over the CheXpert classes with parent/child hierarchy propagated on both sides. True abnormal base rate = 0.561. Granularity ladder: <strong>13-class</strong> (all findings) → <strong>reliable-11</strong> (drops the two κ&lt;0.4 classes) → <strong>3-group</strong> (core pathology groups) → <strong>binary</strong> (any acute finding).</p>
+
+  <!-- TABLE 1 -->
+  <h2><span class="n">Table 1</span> Micro-F1 by prompt and granularity</h2>
+  <p class="sub">The headline table. Gemini's evidence-oriented prompts lead at fine granularity; MedGemma leads on the coarse columns — but see Table 4, that reflects over-calling, not better fine reading.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary</th><th>bin (full-resp)</th><th>top-1 acc</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="6">Gemini · general (API)</td></tr>
+      <tr><td class="lbl">direct</td><td>0.302</td><td>0.323</td><td>0.412</td><td>0.559</td><td>0.683</td><td>0.192</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.333</td><td>0.356</td><td>0.444</td><td>0.596</td><td>0.703</td><td>0.210</td></tr>
+      <tr><td class="lbl">differential</td><td>0.307</td><td>0.330</td><td>0.415</td><td class="best">0.627</td><td>0.691</td><td>0.220</td></tr>
+      <tr><td class="lbl">evidence-first</td><td class="best">0.367</td><td class="best">0.391</td><td class="best">0.482</td><td>0.585</td><td>0.711</td><td class="best">0.232</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.359</td><td>0.384</td><td>0.477</td><td>0.621</td><td class="best">0.712</td><td>0.229</td></tr>
+      <tr class="modrow m"><td colspan="6">MedGemma · medical (local, 8-bit)</td></tr>
+      <tr><td class="lbl">direct</td><td class="best">0.299</td><td class="best">0.310</td><td>0.480</td><td class="best">0.742</td><td>—</td><td>—</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.290</td><td>0.302</td><td>0.509</td><td>0.705</td><td>—</td><td>—</td></tr>
+      <tr><td class="lbl">differential</td><td>0.297</td><td>0.311</td><td>0.491</td><td>0.724</td><td>—</td><td>—</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.289</td><td>0.299</td><td>0.465</td><td>0.614</td><td>—</td><td>—</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.297</td><td>0.306</td><td class="best">0.513</td><td>0.699</td><td>—</td><td>—</td></tr>
+    </tbody>
+    <caption><strong>Table 1.</strong> Micro-F1 across the granularity ladder, both models, five prompts. "bin (full-resp)" scores the whole response (diagnosis + explanation) for the triage question and applies to Gemini only (JSON output); MedGemma runs free-text so top-1 and full-resp are not comparable. Bold = column best within model.</caption>
+  </table></div>
+
+  <!-- TABLE 2 -->
+  <h2><span class="n">Table 2</span> Structured evidence-first vs evidence-first</h2>
+  <p class="sub">The follow-up prompt edit (machine-readable finding table). F1 rises for both models across the ladder — but Table 3 shows the two rises mean different things.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary F1</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="5">Gemini</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.367</td><td>0.391</td><td>0.482</td><td>0.585</td></tr>
+      <tr><td class="lbl">evidence-structured</td><td class="up">0.404</td><td class="up">0.428</td><td class="up">0.567</td><td class="up">0.724</td></tr>
+      <tr class="modrow m"><td colspan="5">MedGemma</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.289</td><td>0.299</td><td>0.465</td><td>0.614</td></tr>
+      <tr><td class="lbl">evidence-structured</td><td class="up">0.307</td><td class="up">0.320</td><td class="up">0.524</td><td class="up">0.736</td></tr>
+    </tbody>
+    <caption><strong>Table 2.</strong> Structured vs unstructured evidence-first, full test set, both models. Every aggregate F1 rises.</caption>
+  </table></div>
+
+  <!-- TABLE 3 -->
+  <h2><span class="n">Table 3</span> The same rise, decomposed</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>find/study</th><th>% flagged abn</th><th>precision</th><th>recall</th><th>F1</th><th>accuracy</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="7">Gemini — an F1 illusion</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>1.00</td><td>27%</td><td>0.893</td><td>0.435</td><td>0.585</td><td>0.654</td></tr>
+      <tr><td class="lbl">evidence-structured</td><td class="dn">2.31</td><td class="dn">76%</td><td class="dn">0.629</td><td class="up">0.851</td><td>0.724</td><td class="dn">0.635</td></tr>
+      <tr class="modrow m"><td colspan="7">MedGemma — a genuine gain</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>1.96</td><td>55%</td><td>0.619</td><td>0.610</td><td>0.614</td><td>0.570</td></tr>
+      <tr><td class="lbl">evidence-structured</td><td>2.37</td><td>61%</td><td class="up">0.707</td><td class="up">0.768</td><td>0.736</td><td class="up">0.691</td></tr>
+    </tbody>
+    <caption><strong>Table 3.</strong> For Gemini, structuring flags 76% abnormal (true 56%): precision collapses and accuracy falls — recall bought with precision (differences n.s., p=0.13 / 0.50). For MedGemma, precision and recall rise together and accuracy climbs +0.121 (paired McNemar, p&lt;0.0001).</caption>
+  </table></div>
+
+  <!-- TABLE 4 -->
+  <h2><span class="n">Table 4</span> Binary operating points across all five prompts</h2>
+  <p class="sub">The whole model-comparison story: Gemini sits high-precision / low-recall; MedGemma over-calls, trading precision for recall. Neither dominates.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>find/study</th><th>% abn</th><th>precision</th><th>recall</th><th>binary F1</th><th>accuracy</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="7">Gemini — conservative, precise</td></tr>
+      <tr><td class="lbl">direct</td><td>0.54</td><td>25%</td><td>0.896</td><td>0.407</td><td>0.559</td><td>0.641</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.78</td><td>29%</td><td>0.876</td><td>0.452</td><td>0.596</td><td>0.656</td></tr>
+      <tr><td class="lbl">differential</td><td>0.58</td><td>32%</td><td>0.857</td><td>0.494</td><td>0.627</td><td>0.670</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>1.00</td><td>27%</td><td>0.893</td><td>0.435</td><td>0.585</td><td>0.654</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.85</td><td>30%</td><td>0.897</td><td>0.475</td><td>0.621</td><td>0.675</td></tr>
+      <tr class="modrow m"><td colspan="7">MedGemma — sensitive, over-calls</td></tr>
+      <tr><td class="lbl">direct</td><td>2.42</td><td>68%</td><td>0.676</td><td>0.823</td><td>0.742</td><td>0.679</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>2.03</td><td>51%</td><td>0.742</td><td>0.671</td><td>0.705</td><td>0.684</td></tr>
+      <tr><td class="lbl">differential</td><td>4.45</td><td>88%</td><td>0.592</td><td>0.931</td><td>0.724</td><td>0.601</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>1.96</td><td>55%</td><td>0.619</td><td>0.610</td><td>0.614</td><td>0.570</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>2.80</td><td>76%</td><td>0.608</td><td>0.823</td><td>0.699</td><td>0.603</td></tr>
+    </tbody>
+    <caption><strong>Table 4.</strong> Binary-triage operating points, all prompts, both models (true abnormal 56%). Gemini names 0.5–1.0 findings/study; MedGemma 2.0–4.5.</caption>
+  </table></div>
+
+  <!-- TABLE 5 -->
+  <h2><span class="n">Table 5</span> Binary-triage accuracy: MedGemma vs Gemini, paired</h2>
+  <p class="sub">The fair normal-vs-abnormal metric, same 754 studies, paired McNemar. On F1 MedGemma looks far ahead (Table 4); on accuracy the picture reverses — no clean winner.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>MedGemma acc</th><th>Gemini acc</th><th>higher</th><th>McNemar p</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">direct</td><td>0.679</td><td>0.641</td><td>MedGemma</td><td class="ns">0.14 n.s.</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.684</td><td>0.656</td><td>MedGemma</td><td class="ns">0.21 n.s.</td></tr>
+      <tr><td class="lbl">differential</td><td>0.601</td><td>0.670</td><td>Gemini</td><td class="sig">0.015 *</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.570</td><td>0.654</td><td>Gemini</td><td class="sig">0.0004 ***</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.603</td><td>0.675</td><td>Gemini</td><td class="sig">0.007 **</td></tr>
+    </tbody>
+    <caption><strong>Table 5.</strong> Gemini is more accurate on the actual triage decision (significant on 3/5 prompts); MedGemma is more sensitive. A precision/recall trade-off chosen by clinical goal, not a winner. Gemini also leads fine finding-naming (mean 13-class F1 0.334 vs 0.294).</caption>
+  </table></div>
+
+  <!-- TABLE 6 -->
+  <h2><span class="n">Table 6</span> F1 stratified by reference-label agreement</h2>
+  <p class="sub">Scoring only cells where the three independent labelers (rule-based, CheXbert, VisualCheXbert) agree, vs cells they don't. A diagnostic on the reference, not a headline change.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt</th><th>all cells</th><th>HIGH · 3/3 agree</th><th>MED · 2/3</th><th>LOW · disagree</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="5">Gemini — clean HIGH &gt; MED &gt; LOW on every pre-registered prompt</td></tr>
+      <tr><td class="lbl">direct</td><td>0.323</td><td class="up">0.372</td><td>0.284</td><td>0.069</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.356</td><td class="up">0.399</td><td>0.318</td><td>0.100</td></tr>
+      <tr><td class="lbl">differential</td><td>0.330</td><td class="up">0.364</td><td>0.303</td><td>0.133</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.391</td><td class="up">0.437</td><td>0.346</td><td>0.100</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.384</td><td class="up">0.417</td><td>0.352</td><td>0.190</td></tr>
+      <tr><td class="lbl">evidence-structured</td><td>0.428</td><td>0.370</td><td>0.562</td><td>0.273</td></tr>
+      <tr class="modrow m"><td colspan="5">MedGemma — inverted (worse on HIGH): over-calling signature</td></tr>
+      <tr><td class="lbl">direct</td><td>0.310</td><td class="dn">0.267</td><td>0.430</td><td>0.298</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.302</td><td class="dn">0.283</td><td>0.354</td><td>0.298</td></tr>
+      <tr><td class="lbl">differential</td><td>0.311</td><td class="dn">0.218</td><td>0.596</td><td>0.711</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.299</td><td class="dn">0.277</td><td>0.361</td><td>0.273</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td>0.306</td><td class="dn">0.266</td><td>0.434</td><td>0.273</td></tr>
+    </tbody>
+    <caption><strong>Table 6.</strong> Gemini's performance rises with reference reliability (as expected if noisy labels suppress scores). MedGemma is <em>worse</em> where all three labelers confidently agree — it manufactures false positives exactly where the reference is confidently negative, independent confirmation of over-calling. LOW cells are ~1% of the total, so those columns are noisy.</caption>
+  </table></div>
+
+  <!-- CALIBRATION -->
+  <h2><span class="n">Table 7</span> Calibration</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">prompt (Gemini)</th><th>ECE</th><th>mean conf</th><th>overconf gap</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">direct</td><td>0.694</td><td>0.887</td><td>+0.694</td></tr>
+      <tr><td class="lbl">chain-of-thought</td><td>0.710</td><td>0.920</td><td>+0.710</td></tr>
+      <tr><td class="lbl">differential</td><td>0.653</td><td>0.873</td><td>+0.653</td></tr>
+      <tr><td class="lbl">evidence-first</td><td>0.681</td><td>0.913</td><td>+0.681</td></tr>
+      <tr><td class="lbl">uncertainty-first</td><td class="best">0.641</td><td class="best">0.870</td><td class="best">+0.641</td></tr>
+    </tbody>
+    <caption><strong>Table 7.</strong> Every prompt is badly overconfident; uncertainty-first is least so (supports H2). MedGemma is equally uninformative: mean confidence on correct vs wrong cases is <strong>85.1 vs 85.1</strong> (Δ ≈ 0) — its token-logprob confidence tracks fluency, not correctness, the same failure Gemini shows.</caption>
+  </table></div>
+
+  <!-- HYPOTHESES -->
+  <h2><span class="n">Pre-registered</span> Hypothesis outcomes (Gemini)</h2>
+  <div class="hyp">
+    <span class="id">H1</span><span class="claim">Evidence-first improves groundedness.</span><span class="v no">refuted as stated</span>
+    <p class="why">Direct has the highest support rate (0.850 vs 0.821) — but only because it barely commits; evidence-first surfaces 2.25× more claims at near-equal fidelity.</p>
+    <span class="id">H2</span><span class="claim">Uncertainty-first reduces overconfidence.</span><span class="v yes">supported</span>
+    <p class="why">Lowest ECE (0.641) and mean confidence — though all prompts remain badly overconfident.</p>
+    <span class="id">H3</span><span class="claim">CoT / differential read better without being more faithful.</span><span class="v yes">supported</span>
+    <p class="why">Chain-of-thought: coherence <strong>+0.248</strong>, faithfulness <strong>−0.229</strong> (both p&lt;0.0001, paired Wilcoxon vs direct). Evidence-first +0.131 / −0.121. An independent rule-based claim adjudicator agrees in direction.</p>
+    <span class="id">H4</span><span class="claim">Prompt effects are larger on ambiguous cases.</span><span class="v yes">supported</span>
+    <p class="why">Prompt-effect spread largest on rare (0.193) and hard-multi (0.158) strata, smallest on easy-abnormal (0.046).</p>
+  </div>
+
+  <!-- TWO-STAGE -->
+  <h2><span class="n">Follow-up</span> Perception vs reasoning (two-stage split)</h2>
+  <p class="sub">Each model split into independent calls — Stage A: image→findings (diagnosis forbidden); Stage B: findings-as-text→diagnosis (no image). Locates where the error is.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th class="lbl">representation</th><th>13-class</th><th>3-group</th><th>binary F1</th><th>find/study</th><th>% abn</th><th>precision</th><th>bin acc</th></tr></thead>
+    <tbody>
+      <tr class="modrow g"><td colspan="8">Gemini — structure inflates reporting</td></tr>
+      <tr><td class="lbl">evidence-first (1 pass)</td><td>0.367</td><td>0.482</td><td>0.585</td><td>1.00</td><td>27%</td><td>0.893</td><td>0.654</td></tr>
+      <tr><td class="lbl">perception-only (Stage A)</td><td>0.396</td><td>0.567</td><td>0.730</td><td class="dn">2.47</td><td class="dn">72%</td><td class="dn">0.651</td><td>0.655</td></tr>
+      <tr><td class="lbl">two-stage dx (Stage B)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>55%</td><td>—</td><td>0.674</td></tr>
+      <tr class="modrow m"><td colspan="8">MedGemma — structure sharpens perception</td></tr>
+      <tr><td class="lbl">evidence-first (1 pass)</td><td>0.289</td><td>0.465</td><td>0.614</td><td>1.96</td><td>55%</td><td>0.619</td><td>0.570</td></tr>
+      <tr><td class="lbl">perception-only (Stage A)</td><td>0.307</td><td>0.503</td><td>0.673</td><td class="up">1.75</td><td class="up">48%</td><td class="up">0.729</td><td class="up">0.659</td></tr>
+      <tr><td class="lbl">two-stage dx (Stage B)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>45%</td><td>—</td><td>0.639</td></tr>
+    </tbody>
+    <caption><strong>Follow-up.</strong> Perception ceiling (Stage A) 0.655 / 0.659 — nearly identical across models. Reasoning fidelity (Stage B agrees with A) 0.833 / 0.967; 77% / 93% of triage errors were already perception errors. The ceiling is a perception ceiling in both — but isolating perception inflates Gemini's reporting (precision down, accuracy flat) while genuinely sharpening MedGemma's (precision + accuracy up, reporting down).</caption>
+  </table></div>
+
+  <div class="note">
+    <strong>Reading the whole record.</strong> No single number carries the story. A prompt that lifts F1 may be over-calling (Gemini, Tables 3 &amp; 4); the same edit can be genuine on another model (MedGemma). Always read F1 against precision <em>and</em> accuracy, at a stated granularity, with the reference's own reliability in view (Table 6) — and the audit that produced these numbers is model-specific.
+  </div>
+
+  <p class="foot">
+    All values regenerate from the analysis scripts on the public IU X-Ray test split (n=754): CheXbert reference, hierarchy-aware scoring, uncertain=positive. Performance/calibration: <code>17_study_results.py</code>. Reference-confidence: <code>33_eval_reference_confidence.py</code>. H3 dissociation: <code>19_h3_dissociation.py</code>. Two-stage: <code>35_run_twostage.py</code> + <code>36_eval_twostage.py</code>. Comparative claims only; not a statement of clinical readiness.
+  </p>
+
+</div>
+
+</body></html>

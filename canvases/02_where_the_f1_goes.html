@@ -1,0 +1,244 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Where the F1 Goes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f1f2f5; --card:#ffffff; --card-2:#f7f8fa; --ink:#14171d; --muted:#59616e;
+    --faint:#8b93a1; --rule:#dcdfe5; --rule-2:#c2c7d0;
+    --accent:#4a3cb0; --accent-soft:#ece9fb;
+    --amber:#9a5b00; --amber-soft:#fbf0dd;
+    --good:#166b41; --bad:#a83228;
+    --disp:'Newsreader',Georgia,serif;
+    --body:'IBM Plex Sans',ui-sans-serif,-apple-system,'Segoe UI',Helvetica,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0c0e12; --card:#14171d; --card-2:#11141a; --ink:#e6e9ee; --muted:#98a1af;
+    --faint:#6a7381; --rule:#232830; --rule-2:#333a45;
+    --accent:#a99bff; --accent-soft:#1c1a33;
+    --amber:#e8a33d; --amber-soft:#2a2013;
+    --good:#4ec98a; --bad:#f0766a;}}
+  :root[data-theme="dark"]{
+    --bg:#0c0e12; --card:#14171d; --card-2:#11141a; --ink:#e6e9ee; --muted:#98a1af;
+    --faint:#6a7381; --rule:#232830; --rule-2:#333a45;
+    --accent:#a99bff; --accent-soft:#1c1a33;
+    --amber:#e8a33d; --amber-soft:#2a2013;
+    --good:#4ec98a; --bad:#f0766a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px 96px;}
+  header{padding:56px 0 8px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px;}
+  h1{font-family:var(--disp);font-weight:600;font-size:clamp(34px,6vw,52px);line-height:1.05;
+    letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance;}
+  .standfirst{font-size:19px;color:var(--muted);margin:0 0 26px;max-width:60ch;text-wrap:balance;}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--faint);border-top:1px solid var(--rule);
+    padding-top:14px;display:flex;flex-wrap:wrap;gap:6px 22px;}
+
+  .headline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+    background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:32px 0;}
+  .hcell{background:var(--card);padding:16px 18px;}
+  .hcell .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:7px;}
+  .hcell .v{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;}
+  .hcell .n{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+  .v.up{color:var(--good);} .v.dn{color:var(--bad);} .v.hi{color:var(--accent);}
+
+  h2{font-family:var(--disp);font-weight:600;font-size:27px;letter-spacing:-.01em;
+    margin:52px 0 6px;padding-top:22px;border-top:1px solid var(--rule);text-wrap:balance;}
+  h2 .num{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);
+    display:block;letter-spacing:.1em;margin-bottom:8px;}
+  h3{font-family:var(--body);font-weight:600;font-size:15px;margin:28px 0 6px;}
+  p{margin:13px 0;max-width:68ch;}
+  .lede{font-size:17.5px;color:var(--muted);margin-top:4px;max-width:64ch;}
+  strong{font-weight:600;}
+  code{font-family:var(--mono);font-size:.85em;background:var(--card-2);border:1px solid var(--rule);
+    padding:1px 5px;border-radius:4px;}
+
+  .verdict{display:flex;gap:11px;align-items:flex-start;margin:20px 0;padding:14px 17px;
+    border-radius:9px;border:1px solid var(--rule-2);background:var(--card);max-width:68ch;}
+  .verdict .tag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;
+    margin-top:2px;}
+  .verdict.no .tag{color:var(--bad);border:1px solid var(--bad);}
+  .verdict.yes .tag{color:var(--good);border:1px solid var(--good);}
+  .verdict.warn{background:var(--amber-soft);border-color:var(--amber);}
+  .verdict.warn .tag{color:var(--amber);border:1px solid var(--amber);}
+  .verdict p{margin:0;font-size:15px;}
+
+  .tw{overflow-x:auto;margin:22px 0;}
+  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;
+    font-variant-numeric:tabular-nums;}
+  caption{caption-side:top;text-align:left;font-family:var(--body);font-size:13px;color:var(--muted);
+    padding:0 0 10px;line-height:1.5;}
+  th,td{padding:8px 11px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule);}
+  thead th{color:var(--faint);font-weight:500;font-size:10.5px;letter-spacing:.06em;
+    text-transform:uppercase;border-bottom:1px solid var(--rule-2);}
+  td.l,th.l{text-align:left;font-family:var(--body);font-weight:500;}
+  tr.ref td{background:var(--card-2);}
+  td.win{color:var(--good);font-weight:600;} td.lose{color:var(--bad);font-weight:600;}
+  td.mark{color:var(--accent);font-weight:600;}
+
+  figure{margin:26px 0;padding:20px;background:var(--card);border:1px solid var(--rule);border-radius:10px;}
+  figcaption{font-size:13px;color:var(--muted);margin-top:16px;line-height:1.55;}
+  .calls{display:grid;grid-template-columns:150px 1fr 62px;gap:5px 12px;align-items:center;
+    font-family:var(--mono);font-size:11.5px;}
+  .calls .nm{text-align:right;font-family:var(--body);font-size:12.5px;}
+  .track{position:relative;height:19px;background:var(--card-2);border-radius:3px;}
+  .track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--rule-2);}
+  .bar{position:absolute;top:3px;height:13px;border-radius:2px;}
+  .bar.over{background:var(--bad);left:50%;}
+  .bar.under{background:var(--accent);}
+  .calls .rt{font-variant-numeric:tabular-nums;color:var(--muted);}
+  .axis-note{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;
+    color:var(--faint);margin-top:9px;padding:0 0 0 162px;}
+
+  .prev{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);
+    border:1px solid var(--rule);border-radius:9px;overflow:hidden;margin:20px 0;}
+  .prev div{background:var(--card);padding:14px 16px;text-align:center;}
+  .prev .s{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--faint);}
+  .prev .p{font-family:var(--mono);font-size:23px;font-weight:600;margin-top:5px;
+    font-variant-numeric:tabular-nums;}
+  .prev .last .p{color:var(--amber);}
+
+  ul{padding-left:20px;max-width:68ch;} li{margin:8px 0;}
+  .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);font-size:12.5px;
+    color:var(--faint);line-height:1.65;}
+</style>
+
+<div class="wrap">
+<header>
+<p class="eyebrow">Diagnostic note · radiology VLM evaluation</p>
+<h1>Where the F1 goes</h1>
+<p class="standfirst">A fine-grained score of 0.31 looked like a model that could not see. Six measurements later it turns out to be a model that could see and could not decide — and fixing the deciding is worth more than every prompt we ever wrote.</p>
+<div class="meta"><span>MedGemma-4B · 8-bit · local</span><span>IU X-Ray, locked test split n = 754</span><span>CheXbert reference, hierarchy-aware</span><span>scripts 48–50</span></div>
+</header>
+
+<div class="headline">
+  <div class="hcell"><div class="k">where we started</div><div class="v">0.3072</div><div class="n">13-class micro-F1, zero-shot</div></div>
+  <div class="hcell"><div class="k">discrimination</div><div class="v hi">0.770</div><div class="n">macro AUROC on the same features</div></div>
+  <div class="hcell"><div class="k">honest ceiling reached</div><div class="v up">0.5061</div><div class="n">trained readout, transductive</div></div>
+  <div class="hcell"><div class="k">inductive equivalent</div><div class="v dn">0.4710</div><div class="n">what survives strict protocol</div></div>
+</div>
+
+<h2><span class="num">Step 01</span>Is the model failing to discriminate?</h2>
+<p class="lede">The first thing to rule out is the obvious reading: that a low F1 means the finding simply cannot be told apart from its absence.</p>
+<p>We already had the representation the model works from — the vectors its own vision encoder hands to its language model. Fitting one logistic regression per finding on those vectors, on training studies the model never sees at test time, gives a direct measure of how separable each finding is at the point of use.</p>
+<p><strong>Macro AUROC 0.770</strong>, against a committed F1 of 0.3072 on the same studies. A number near 0.77 is not what an inseparable problem looks like. Whatever is going wrong is happening after the evidence is available.</p>
+<div class="verdict no"><span class="tag">ruled out</span><p>Discrimination is not the binding constraint. The ordering is good; the cut point is not.</p></div>
+
+<h2><span class="num">Step 02</span>Is the reference too noisy to score against?</h2>
+<p class="lede">The standing assumption in this project was that a report-derived reference caps the achievable score — two labelers agree at only F1 0.771.</p>
+<p>That is testable without changing a single prediction. Score the identical outputs against a stricter target: a finding counts as present only when at least two of three independent labelers agree — a rule-based labeler, CheXbert, and VisualCheXbert. If reference noise is suppressing the measurement, denoising the reference should lift it.</p>
+<div class="tw"><table>
+<caption>Same predictions, two references. If label noise were the cap, the right-hand column would rise.</caption>
+<thead><tr><th class="l">system</th><th>CheXbert alone</th><th>majority of 3</th><th class="l">change</th></tr></thead>
+<tbody>
+<tr><td class="l">MedGemma zero-shot</td><td>0.3072</td><td>0.3091</td><td class="l">+0.0019</td></tr>
+<tr><td class="l">trained readout</td><td>0.4706</td><td>0.4721</td><td class="l">+0.0015</td></tr>
+</tbody></table></div>
+<p>Essentially nothing, on either system. The 0.771 agreement ceiling is real, but it is not what these numbers are pressed against. An earlier result in this project found a +0.028 gain from the same denoising — that was on a different model's outputs, and it does not generalise.</p>
+<div class="verdict no"><span class="tag">ruled out</span><p>Reference noise is not the cause. This corrects a working assumption we had carried for months.</p></div>
+
+<h2><span class="num">Step 03</span>Then where, exactly?</h2>
+<p class="lede">If the evidence is present and the target is sound, the failure has to be in what the model commits to. Counting calls per finding makes it visible immediately.</p>
+
+<figure>
+<div class="calls">
+  <div class="nm">Pneumothorax</div><div class="track"><div class="mid"></div><div class="bar over" style="width:35.4%;"></div></div><div class="rt">87 / 7</div>
+  <div class="nm">Support Devices</div><div class="track"><div class="mid"></div><div class="bar over" style="width:31.6%;"></div></div><div class="rt">578 / 61</div>
+  <div class="nm">Pleural Effusion</div><div class="track"><div class="mid"></div><div class="bar over" style="width:10.3%;"></div></div><div class="rt">150 / 72</div>
+  <div class="nm">Cardiomegaly</div><div class="track"><div class="mid"></div><div class="bar over" style="width:6.0%;"></div></div><div class="rt">245 / 161</div>
+  <div class="nm">Fracture</div><div class="track"><div class="mid"></div><div class="bar over" style="width:2.3%;"></div></div><div class="rt">26 / 22</div>
+  <div class="nm">Edema</div><div class="track"><div class="mid"></div><div class="bar under" style="width:6.5%;left:43.5%;"></div></div><div class="rt">27 / 43</div>
+  <div class="nm">Lung Opacity</div><div class="track"><div class="mid"></div><div class="bar under" style="width:7.5%;left:42.5%;"></div></div><div class="rt">174 / 297</div>
+  <div class="nm">Lung Lesion</div><div class="track"><div class="mid"></div><div class="bar under" style="width:11.9%;left:38.1%;"></div></div><div class="rt">12 / 28</div>
+  <div class="nm">Pleural Other</div><div class="track"><div class="mid"></div><div class="bar under" style="width:14.2%;left:35.8%;"></div></div><div class="rt">4 / 11</div>
+  <div class="nm">Consolidation</div><div class="track"><div class="mid"></div><div class="bar under" style="width:25.9%;left:24.1%;"></div></div><div class="rt">3 / 19</div>
+  <div class="nm">Enlarged Cardiomed.</div><div class="track"><div class="mid"></div><div class="bar under" style="width:30.3%;left:19.7%;"></div></div><div class="rt">8 / 69</div>
+  <div class="nm">Atelectasis</div><div class="track"><div class="mid"></div><div class="bar under" style="width:47.3%;left:2.7%;"></div></div><div class="rt">5 / 144</div>
+  <div class="nm">Pneumonia</div><div class="track"><div class="mid"></div><div class="bar under" style="width:50%;left:0;"></div></div><div class="rt">0 / 39</div>
+</div>
+<div class="axis-note"><span>← never called</span><span>calls = truth</span><span>10× over-called →</span></div>
+<figcaption><strong>Calls made against findings actually present</strong>, all 754 test studies, log scale about the centre line. The model is wrong in both directions at once: it names support devices 578 times where 61 exist, and atelectasis 5 times where 144 do. Pneumonia it never names at all.</figcaption>
+</figure>
+
+<p>The same frozen representation supports <strong>AUROC 0.819 on atelectasis</strong> and a readout F1 of 0.495. The model made five calls. It is not blind to atelectasis; its operating point for atelectasis is simply wrong, and wrong in the opposite direction from its operating point for support devices.</p>
+<div class="verdict yes"><span class="tag">located</span><p>Per-class commitment miscalibration. Not perception, not the reference — the thresholds at which the language head decides to name a finding.</p></div>
+
+<h2><span class="num">Step 04</span>How much does fixing only that recover?</h2>
+<p class="lede">Keep the representation exactly as it is. Change nothing but where each finding's decision boundary sits.</p>
+<div class="tw"><table>
+<caption>Full granularity ladder, same studies, same reference, same conventions as every other table in this project.</caption>
+<thead><tr><th class="l">system</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary acc</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="l">MedGemma Stage A, zero-shot</td><td>0.3072</td><td>0.3218</td><td>0.5030</td><td>0.6592</td></tr>
+<tr><td class="l">readout, matched to the model's own budget</td><td>0.3698</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class="l">readout, thresholds tuned on dev</td><td class="mark">0.4706</td><td class="mark">0.5144</td><td class="mark">0.6290</td><td class="mark">0.7745</td></tr>
+<tr><td class="l">readout, thresholds tuned on test <em>(bound only)</em></td><td>0.5333</td><td>—</td><td>—</td><td>—</td></tr>
+</tbody></table></div>
+<p>Thresholding alone is worth <strong>+0.16 F1</strong> — more than every prompt-engineering result in this project put together, on a representation that has not changed at all. And the gap between the dev-tuned row and the oracle row says another 0.06 is being lost purely in how the threshold transfers between splits.</p>
+
+<h2><span class="num">Step 05</span>Why does a threshold not transfer?</h2>
+<p class="lede">Because the splits are not the same problem.</p>
+<div class="prev">
+  <div><div class="s">train</div><div class="p">0.0536</div></div>
+  <div><div class="s">dev</div><div class="p">0.0569</div></div>
+  <div class="last"><div class="s">test</div><div class="p">0.0993</div></div>
+</div>
+<p>Positive-cell prevalence, the fraction of all study × finding cells that are positive. The locked test split was deliberately stratified across difficulty, which makes it abnormality-enriched by <strong>1.85×</strong> — and unevenly so: atelectasis 2.6×, edema 2.8×, pleural effusion 2.9×. A cut point fitted where positives are rare will under-call where they are common. That is the entire 0.4706-to-0.5333 gap, and it is a property of the study design rather than of the method.</p>
+<div class="verdict yes"><span class="tag">explains</span><p>The residual loss is prior shift between selection and evaluation splits, not a modelling deficit.</p></div>
+
+<h2><span class="num">Step 06</span>Four attempts to close it</h2>
+<p class="lede">Three failed. Recording them is the point — each failure says something the success does not.</p>
+
+<h3>Prevalence-matched thresholds — failed, 0.4308</h3>
+<p>Emit the number of positives the development split's base rate predicts. Reasonable in principle, and wrong here for the reason Step 05 gives: transferring a <em>rate</em> across splits with different base rates under-calls by 43%, 557 predicted against 973 true. Rank-based selection transfers between these splits; rate-based selection cannot.</p>
+
+<h3>EM prior estimation — failed, 0.3140</h3>
+<p>The textbook correction for label shift estimates the target prior from unlabelled target posteriors. It diverged. On the weakly-separated findings it ran to degenerate solutions — an estimated prior of <strong>1.000</strong> for both Enlarged Cardiomediastinum and Consolidation, whose true rates are 0.092 and 0.025. Call count blew out to 4,410 and F1 fell below the zero-shot baseline. A known instability of the method when the base classifier is weak, and weak is exactly what these classes are.</p>
+
+<h3>Concatenating representations from three depths — failed, 0.4285</h3>
+<p>9,728 dimensions against 2,520 training studies. Macro AUROC barely moved (0.7724 against 0.7700) while F1 fell, so the extra sites contributed variance rather than signal — consistent with the finding that diagnostic content is complete by layer 12 and later sites are largely redundant.</p>
+
+<h3>Averaging calibrated posteriors from those same three depths — worked, 0.5061</h3>
+<p>The identical three sites, combined after the decision function rather than before it. <strong>Ensemble at the posterior, not at the feature.</strong> With sigmoid calibration on dev and a label-free expected-F1 cut point, this is the configuration that clears 0.5.</p>
+
+<div class="tw"><table>
+<caption>Every configuration tried, in the order tried. Nine have now been scored on the locked test split; all are shown rather than the winner alone.</caption>
+<thead><tr><th class="l">configuration</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary</th><th>calls</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="l">MedGemma zero-shot</td><td>0.3072</td><td>0.3218</td><td>0.5030</td><td>0.6592</td><td>1319</td></tr>
+<tr><td class="l">dev-tuned threshold</td><td>0.4706</td><td>0.5144</td><td>0.6290</td><td>0.7745</td><td>1275</td></tr>
+<tr><td class="l">prevalence-matched</td><td class="lose">0.4308</td><td>0.4737</td><td>0.5699</td><td>0.7042</td><td>558</td></tr>
+<tr><td class="l">3-depth feature concatenation</td><td class="lose">0.4285</td><td>0.4921</td><td>0.5887</td><td>0.7056</td><td>1612</td></tr>
+<tr><td class="l">EM prior correction</td><td class="lose">0.3140</td><td>0.3562</td><td>0.4747</td><td>0.5610</td><td>4410</td></tr>
+<tr><td class="l">calibrated, single site</td><td>0.4957</td><td>0.5568</td><td>0.6656</td><td>0.7706</td><td>1137</td></tr>
+<tr><td class="l">calibrated, 2-depth posterior mean</td><td>0.5025</td><td>0.5633</td><td>0.6672</td><td class="win">0.7838</td><td>1184</td></tr>
+<tr><td class="l"><strong>calibrated, 3-depth posterior mean</strong></td><td class="win">0.5061</td><td class="win">0.5661</td><td class="win">0.6738</td><td>0.7772</td><td>1228</td></tr>
+<tr><td class="l">same, strictly inductive threshold</td><td>0.4699</td><td>0.5217</td><td>0.6442</td><td>0.7878</td><td>1615</td></tr>
+</tbody></table></div>
+
+<h2><span class="num">Step 07</span>What the 0.5061 costs</h2>
+<p class="lede">Three caveats, none of which we want a reader to have to discover for themselves.</p>
+
+<div class="verdict warn"><span class="tag">transductive</span><p>The winning cut point is computed from the test set's own posterior distribution — its features, never its labels. That is batch-transductive, a legitimate and named technique, but not the strictly inductive protocol used elsewhere in this project. <strong>Inductively the same pipeline gives 0.4710</strong>, and the entire +0.035 is test-time adaptation rather than a better model.</p></div>
+
+<div class="verdict warn"><span class="tag">supervised</span><p>The readout is fitted on 2,520 labelled studies. Every prompt, model and visual-input result in the parent study is zero-shot. These numbers cannot be placed in those tables, and a readout beating a zero-shot model is not evidence that better prompting would close the gap.</p></div>
+
+<div class="verdict warn"><span class="tag">multiplicity</span><p>Nine configurations have now been evaluated against a split that was locked precisely to be evaluated against once. That erodes it. The table above reports all nine for exactly this reason, and the honest headline under an inductive protocol remains ≈ 0.47.</p></div>
+
+<h2><span class="num">Step 08</span>What this does and does not mean</h2>
+<p><strong>It does not raise the parent study's headline numbers.</strong> Those are zero-shot prompting results and that ceiling was settled by earlier work: ensembling twice, chain-of-verification, few-shot twice, and per-class targeted prompts were all exhausted, and class-dropping was rejected as metric gaming.</p>
+<p><strong>It changes the diagnosis.</strong> The parent study concluded that error is overwhelmingly perceptual and that the residue behaves like a recognition limit. That survives, but sharpens: the information is present and linearly recoverable at the point the language model receives it, and what fails is the mapping from that evidence to a committed finding. The deficit is in the readout, not the eye.</p>
+<p><strong>It predicts where the remaining gain is.</strong> If the features already support roughly half the fine-grained task and the loss is in the head, then adjusting the head is the indicated intervention — which is what a LoRA fine-tune does, and what is running now.</p>
+<p>One closing observation worth its own sentence. The gap between the two threshold rules — 1,249 calls against 558 — is the parent study's central thesis reappearing inside a linear classifier that has no prompt, no reasoning, and no language model. Micro-F1 rewards committing above prevalence on imbalanced classes. The commitment dial is not a property of vision–language models. It is a property of the metric.</p>
+
+<p class="foot">MedGemma-4B-8bit, features extracted with no text generation · IU X-Ray, 2,520 train / 552 dev / 754 locked test · CheXbert reference, hierarchy-aware, uncertain = positive · logistic regression, regularisation selected on dev · Reproduced by <code>scripts/48_diagnose_f1.py</code>, <code>49_readout_ladder.py</code>, <code>50_readout_priorshift.py</code>. Companion to the working paper on prompt format, model choice and visual input; not a statement of clinical readiness.</p>
+</div>
+
+</body></html>

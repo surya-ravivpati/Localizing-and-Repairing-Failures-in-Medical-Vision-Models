@@ -1,0 +1,176 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Prompt appendix — Radiology VLM study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg:#f4f3ef; --surface:#fff; --surface-2:#faf9f6;
+    --ink:#191c20; --muted:#5b6570; --faint:#8b95a1;
+    --hair:#dcdfe3; --hair-strong:#c4c9cf;
+    --accent:#0f766e; --gemini:#7c5cff; --medg:#0f766e; --ft:#b45309;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0d1013; --surface:#15191e; --surface-2:#12161b;
+    --ink:#e7ebef; --muted:#9aa4b0; --faint:#6c7783;
+    --hair:#262c33; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gemini:#a48bff; --medg:#2dd4bf; --ft:#f59e0b;}}
+  :root[data-theme="light"]{
+    --bg:#f4f3ef; --surface:#fff; --surface-2:#faf9f6;
+    --ink:#191c20; --muted:#5b6570; --faint:#8b95a1;
+    --hair:#dcdfe3; --hair-strong:#c4c9cf;
+    --accent:#0f766e; --gemini:#7c5cff; --medg:#0f766e; --ft:#b45309;}
+  :root[data-theme="dark"]{
+    --bg:#0d1013; --surface:#15191e; --surface-2:#12161b;
+    --ink:#e7ebef; --muted:#9aa4b0; --faint:#6c7783;
+    --hair:#262c33; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gemini:#a48bff; --medg:#2dd4bf; --ft:#f59e0b;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);
+    line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px 96px;}
+  .masthead{border-bottom:2px solid var(--ink);margin-top:40px;padding-bottom:10px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;}
+  .masthead .brand{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);}
+  .masthead .status{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);}
+  h1{font-family:var(--sans);font-weight:620;font-size:clamp(27px,4.6vw,40px);
+    line-height:1.08;letter-spacing:-.02em;text-wrap:balance;margin:32px 0 10px;}
+  .dek{font-size:19px;color:var(--muted);font-style:italic;text-wrap:balance;margin:0 0 6px;}
+  .byline{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.04em;
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--hair);}
+  h2{font-family:var(--sans);font-weight:600;font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);margin:52px 0 4px;
+    display:flex;align-items:baseline;gap:10px;}
+  h2 .n{font-family:var(--mono);color:var(--faint);font-size:12px;}
+  .sub{font-family:var(--sans);font-size:14.5px;color:var(--muted);margin:6px 0 18px;max-width:72ch;}
+  p{margin:11px 0;}
+  code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);
+    border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+
+  /* system preamble block */
+  .sys{background:var(--surface-2);border:1px solid var(--hair);border-left:3px solid var(--accent);
+    border-radius:8px;padding:16px 18px;margin:14px 0 8px;}
+  .sys .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:8px;}
+  .sys p{font-family:var(--serif);font-size:15px;margin:0;line-height:1.55;}
+
+  /* prompt cards */
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:10px;
+    padding:16px 18px 14px;margin:14px 0;border-top:3px solid var(--accent);}
+  .card.gemini{border-top-color:var(--gemini);}
+  .card.medg{border-top-color:var(--medg);}
+  .card.ft{border-top-color:var(--ft);}
+  .card .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .card .name{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink);}
+  .card .tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--hair-strong);border-radius:20px;padding:1px 8px;}
+  .card .note{font-family:var(--sans);font-size:12.5px;color:var(--faint);margin:2px 0 10px;}
+  .card .body{font-family:var(--serif);font-size:14.5px;line-height:1.55;white-space:pre-wrap;
+    color:var(--ink);}
+  .card .step{color:var(--accent);font-family:var(--mono);font-size:.82em;font-weight:700;}
+
+  .foot{font-family:var(--sans);font-size:12.5px;color:var(--faint);margin-top:44px;
+    padding-top:16px;border-top:1px solid var(--hair);line-height:1.6;}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <span class="brand">Working paper · Radiology AI · appendix</span>
+    <span class="status">prompts · verbatim</span>
+  </div>
+
+  <h1>Prompt appendix</h1>
+  <p class="dek">Every prompt exactly as run — the five pre-registered conditions, the structured &amp; two-stage follow-ups, the local-model free-text variants, and the fine-tuning target.</p>
+  <p class="byline">Source: src/prompts.py · gemini-2.5-flash (JSON) · MedGemma-4B (free-text) · each user message is prepended with "Indication: {…}"</p>
+
+  <h2><span class="n">A</span> Shared system preamble &nbsp;·&nbsp; Gemini (JSON)</h2>
+  <p class="sub">Prepended to all five pre-registered conditions and the structured/two-stage variants. Only the user-message scaffold below changes between conditions.</p>
+  <div class="sys">
+    <div class="cap">system</div>
+    <p>You are assisting with a research study on chest radiograph interpretation. You are shown one or more chest X-ray images and (optionally) a short clinical indication. Report only what is supported by the image. If a finding is not visible or is ambiguous, say so. Do not invent measurements, priors, or clinical history. Confidence is an integer 0-100 where: 90-100 = near-certain, 70-89 = probable, 50-69 = favored but uncertain, 30-49 = possible, 0-29 = unlikely/absent. Return ONLY valid JSON matching the requested fields.</p>
+  </div>
+
+  <h2><span class="n">B</span> The five pre-registered prompts &nbsp;·&nbsp; Gemini (JSON)</h2>
+  <p class="sub">Identical instruction frame; only the reasoning scaffold differs. These carry hypotheses H1–H4.</p>
+
+  <div class="card gemini"><div class="head"><span class="name">direct</span><span class="tag">baseline</span></div>
+    <div class="body">Give your single most likely primary diagnosis (or "No acute cardiopulmonary finding"), a one-sentence explanation, and your confidence (0-100).</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">cot</span><span class="tag">chain-of-thought</span></div>
+    <div class="body">Think step by step about the visible anatomy (lungs, pleura, heart/mediastinum, bones, devices) BEFORE concluding. Then give the primary diagnosis, explanation, and confidence (0-100). Put the step-by-step reasoning in "reasoning".</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">ddx</span><span class="tag">differential</span></div>
+    <div class="body">Produce a ranked differential of up to 5 diagnoses. For each: name, brief supporting rationale from the image, and a probability (0-100). Probabilities need not sum to 100. Then state the single most likely primary diagnosis and overall confidence.</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">evidence_first</span><span class="tag">evidence → dx</span></div>
+    <div class="body"><span class="step">STEP 1 — EVIDENCE:</span> List every discrete visual finding you can actually see, each as {finding, location, presence: present/absent/uncertain}. Include pertinent negatives.
+<span class="step">STEP 2 — DIAGNOSIS:</span> Using ONLY the evidence in Step 1, state the primary diagnosis, an explanation that references specific Step-1 items, and confidence.</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">uncertainty_first</span><span class="tag">calibrate → dx</span></div>
+    <div class="body"><span class="step">STEP 1 — UNCERTAINTY:</span> State image-quality limits and which regions are ambiguous or non-diagnostic. Decide whether a confident read is possible.
+<span class="step">STEP 2 — DIAGNOSIS:</span> Give primary diagnosis (or explicit "indeterminate / insufficient evidence"), explanation, and a calibrated confidence (0-100) that reflects Step 1. Abstention is allowed and encouraged when warranted.</div></div>
+
+  <h2><span class="n">C</span> Follow-up &amp; two-stage prompts &nbsp;·&nbsp; Gemini (JSON)</h2>
+  <p class="sub">The §3.3 structured variant, and the two independent calls that separate perception from reasoning.</p>
+
+  <div class="card gemini"><div class="head"><span class="name">evidence_structured</span><span class="tag">machine-readable table</span></div>
+    <div class="note">The structured evidence-first variant (§3.3). Findings become a per-class PRESENT/ABSENT/UNCERTAIN table.</div>
+    <div class="body">1. IMAGE QUALITY — projection, rotation, inspiration, exposure.
+2. VISUAL FINDINGS — review cardiomediastinal silhouette, lungs, pleura, bones, and devices, and for EACH record a status of PRESENT / ABSENT / UNCERTAIN with (where applicable) laterality, location, and the visual evidence: [the 13 CheXpert findings].
+3. INTEGRATE the findings marked PRESENT.
+4. IMPRESSION — at most 3 abnormalities, taken only from step 2.
+5. CONFIDENCE.</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">perception_only</span><span class="tag">two-stage · Stage A</span></div>
+    <div class="note">Image → findings. Diagnosis forbidden — primary_diagnosis is forced to the literal "DEFERRED".</div>
+    <div class="body">Examine this chest radiograph systematically. For EACH of the following findings, decide present / absent / uncertain, with the specific visual evidence: [13 findings]. Do NOT state an overall diagnosis, impression, or interpretation. Report ONLY the individual findings — a later, separate step will reason from them.</div></div>
+
+  <div class="card gemini"><div class="head"><span class="name">diagnose_from_findings</span><span class="tag">two-stage · Stage B · no image</span></div>
+    <div class="note">System is replaced (no image access) — findings → diagnosis only.</div>
+    <div class="body"><span class="step">system:</span> You are a radiologist reasoning from a colleague's documented findings. You do NOT have access to the original image — reason ONLY from the findings listed below. Return ONLY valid JSON matching the requested fields.
+
+<span class="step">user:</span> The following findings were documented from systematic review of a chest radiograph: [serialized Stage-A findings]. Based ONLY on these findings — do not assume anything not listed — state the primary diagnosis (or "No acute cardiopulmonary finding" if all findings are absent), a one-sentence explanation citing the specific findings that support it, and your confidence.</div></div>
+
+  <h2><span class="n">D</span> Local-model free-text prompts &nbsp;·&nbsp; MedGemma-4B</h2>
+  <p class="sub">MedGemma's perception collapses under strict JSON, so it runs in free text. A shared region-scan is layered into every condition — the fix for the 4B model defaulting to "normal".</p>
+
+  <div class="card medg"><div class="head"><span class="name">system + region scan</span><span class="tag">shared</span></div>
+    <div class="body"><span class="step">system:</span> You are a radiologist reading a chest X-ray. Report findings by their standard radiology names (e.g. cardiomegaly, pleural effusion, atelectasis, consolidation, pulmonary edema, pneumothorax, lung opacity, fracture, support device). Report only what the image supports.
+
+<span class="step">region scan (into every condition):</span> Examine each region in turn — heart and mediastinum, both lungs, pleura and costophrenic angles, bones, and any devices — and name each abnormality you can see.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">direct</span></div>
+    <div class="body">[region scan] Then give your single most likely primary diagnosis.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">cot</span></div>
+    <div class="body">Reason step by step: for each region, state what you observe and whether it is normal or abnormal, working through heart/mediastinum, lungs, pleura, bones, devices. Then give your overall impression and the primary diagnosis.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">ddx</span></div>
+    <div class="body">[region scan] Then list a ranked differential of the most likely diagnoses, and state the single most likely one with its supporting findings.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">evidence_first</span></div>
+    <div class="body"><span class="step">STEP 1</span> — list every visual finding you can see, region by region (heart/mediastinum, lungs, pleura, bones, devices), each as present or absent. <span class="step">STEP 2</span> — using only that evidence, name the abnormal findings and the primary diagnosis.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">uncertainty_first</span></div>
+    <div class="body">[region scan] For each abnormality, say whether you are confident or it is equivocal. Then give a calibrated primary diagnosis, naming every finding you do see even if mild.</div></div>
+
+  <div class="card medg"><div class="head"><span class="name">perception_only</span><span class="tag">two-stage · Stage A (free-text)</span></div>
+    <div class="body">Examine this chest radiograph systematically. [region scan] For each finding give its status and the visual evidence. Do NOT give an overall diagnosis or impression — report only the individual findings; a separate step will reason from them later.</div></div>
+
+  <h2><span class="n">E</span> Fine-tuning target &nbsp;·&nbsp; MedGemma LoRA</h2>
+  <p class="sub">Used identically in training and evaluation, so the label vocabulary matches on both sides.</p>
+  <div class="card ft"><div class="head"><span class="name">detection instruction</span><span class="tag">LoRA · train = eval</span></div>
+    <div class="body">You are a radiologist reading a chest radiograph. Decide which of the following findings are present: [14 CheXpert classes]. Reply with only the present findings by name, separated by semicolons, or "No acute cardiopulmonary finding" if none are present.</div>
+    <div class="note" style="margin-top:10px;">Target answer: the CheXbert-positive findings as canonical class names (e.g. "Cardiomegaly; Pleural Effusion"), or "No acute cardiopulmonary finding".</div></div>
+
+  <p class="foot">
+    Prompts reproduced verbatim from <code>src/prompts.py</code>. Bracketed inserts ([13 findings], [region scan], [serialized Stage-A findings]) mark literal expansions filled at runtime. JSON schema hints (the "Return JSON with keys …" tails) are omitted here for readability but are part of each Gemini prompt. The 13 CheXpert findings: Enlarged Cardiomediastinum, Cardiomegaly, Lung Opacity, Lung Lesion, Edema, Consolidation, Pneumonia, Atelectasis, Pneumothorax, Pleural Effusion, Pleural Other, Fracture, Support Devices.
+  </p>
+
+</div>
+
+</body></html>

@@ -1,0 +1,850 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>What moves a radiology VLM — prompt, model, and image</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#f5f4f0; --surface:#fff; --surface-2:#faf9f6; --ink:#16181c; --muted:#565f6b;
+    --faint:#8a939f; --hair:#dcdee2; --hair-strong:#bfc4cb;
+    --accent:#0f5f70; --gem:#7c5cff; --med:#0f766e;
+    --a:#475569; --b:#7c5cff; --c:#0f766e; --d:#b45309;
+    --warn:#b45309; --good:#15803d;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0c0f12; --surface:#14181d; --surface-2:#11151a; --ink:#e8ecf0; --muted:#9aa4b0;
+    --faint:#6b7683; --hair:#252b32; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gem:#a48bff; --med:#2dd4bf;
+    --a:#94a3b8; --b:#a48bff; --c:#2dd4bf; --d:#f59e0b;
+    --warn:#f59e0b; --good:#4ade80;}}
+  :root[data-theme="light"]{
+    --bg:#f5f4f0; --surface:#fff; --surface-2:#faf9f6; --ink:#16181c; --muted:#565f6b;
+    --faint:#8a939f; --hair:#dcdee2; --hair-strong:#bfc4cb;
+    --accent:#0f5f70; --gem:#7c5cff; --med:#0f766e;
+    --a:#475569; --b:#7c5cff; --c:#0f766e; --d:#b45309; --warn:#b45309; --good:#15803d;}
+  :root[data-theme="dark"]{
+    --bg:#0c0f12; --surface:#14181d; --surface-2:#11151a; --ink:#e8ecf0; --muted:#9aa4b0;
+    --faint:#6b7683; --hair:#252b32; --hair-strong:#333b44;
+    --accent:#2dd4bf; --gem:#a48bff; --med:#2dd4bf;
+    --a:#94a3b8; --b:#a48bff; --c:#2dd4bf; --d:#f59e0b; --warn:#f59e0b; --good:#4ade80;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);
+    line-height:1.62;-webkit-font-smoothing:antialiased;font-size:16.5px;}
+  .wrap{max-width:830px;margin:0 auto;padding:0 26px 100px;}
+  .rule{border-top:3px double var(--ink);margin-top:44px;}
+  .venue{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);padding:10px 0 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  h1{font-weight:700;font-size:clamp(26px,4.4vw,36px);line-height:1.18;letter-spacing:-.012em;
+    text-wrap:balance;margin:26px 0 6px;}
+  .sub1{font-style:italic;font-size:19px;color:var(--muted);margin:0 0 18px;text-wrap:balance;}
+  .authors{font-size:15.5px;margin:0 0 2px;}
+  .affil{font-size:13.5px;color:var(--muted);margin:0 0 18px;}
+  .absbox{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    padding:18px 0 16px;margin:22px 0 8px;}
+  .absbox h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 10px;border:0;padding:0;}
+  .absbox p{margin:8px 0;font-size:15.5px;}
+  .absbox .lbl{font-weight:700;font-variant:small-caps;letter-spacing:.02em;}
+  .kw{font-size:13.5px;color:var(--muted);margin:12px 0 0;}
+  .toc{background:var(--surface-2);border:1px solid var(--hair);border-radius:6px;
+    padding:14px 18px;margin:20px 0;font-family:var(--sans);font-size:13.5px;color:var(--muted);}
+  .toc b{color:var(--ink);}
+  h2{font-family:var(--sans);font-weight:660;font-size:15.5px;letter-spacing:-.005em;color:var(--ink);
+    margin:44px 0 8px;padding-top:16px;border-top:1px solid var(--hair);}
+  h3{font-family:var(--sans);font-weight:640;font-size:14.5px;color:var(--ink);margin:26px 0 6px;}
+  h4{font-family:var(--sans);font-weight:640;font-size:13.5px;color:var(--muted);margin:18px 0 4px;}
+  p{margin:11px 0;} a{color:var(--accent);}
+  code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--hair);
+    padding:1px 5px;border-radius:3px;}
+  .tbl-wrap{overflow-x:auto;margin:18px 0;}
+  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12px;
+    font-variant-numeric:tabular-nums;}
+  caption{caption-side:top;text-align:left;font-family:var(--sans);font-size:12.5px;color:var(--ink);
+    padding:0 0 8px;line-height:1.5;}
+  caption .cap{color:var(--muted);font-weight:400;}
+  th,td{padding:7px 10px;text-align:right;white-space:nowrap;}
+  thead th{color:var(--muted);font-weight:600;font-size:10px;letter-spacing:.04em;text-transform:uppercase;
+    border-bottom:1.5px solid var(--ink);}
+  thead tr:first-child th{border-top:1.5px solid var(--ink);}
+  tbody tr{border-bottom:1px solid var(--hair);}
+  tbody tr:last-child{border-bottom:1.5px solid var(--ink);}
+  th.lbl,td.lbl{text-align:left;font-family:var(--sans);font-weight:520;color:var(--ink);}
+  td.up{color:var(--good);font-weight:700;} td.dn{color:var(--warn);font-weight:700;}
+  td.hi{font-weight:700;color:var(--accent);} tr.ref td{background:var(--surface-2);}
+  .grp td{background:var(--surface-2);font-family:var(--sans);font-weight:640;font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;text-align:left;}
+  .grp.g td{color:var(--gem);} .grp.m td{color:var(--med);}
+  .sec-a{border-left:3px solid var(--a);} .sec-b{border-left:3px solid var(--b);}
+  .sec-c{border-left:3px solid var(--c);} .sec-d{border-left:3px solid var(--d);}
+  .box{border:1px solid var(--hair-strong);background:var(--surface-2);border-radius:6px;
+    padding:16px 18px;margin:20px 0;}
+  .box .t{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:8px;}
+  .box p{margin:6px 0;font-size:15px;}
+  .box.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--hair));}
+  .box.warn .t{color:var(--warn);}
+  .hyp{display:grid;grid-template-columns:auto 1fr auto;gap:4px 14px;align-items:baseline;
+    font-family:var(--sans);font-size:14.5px;margin:14px 0;}
+  .hyp .id{font-family:var(--mono);font-weight:700;color:var(--accent);}
+  .hyp .v{justify-self:end;font-family:var(--mono);font-size:11.5px;font-weight:600;
+    padding:1px 9px;border-radius:20px;white-space:nowrap;}
+  .hyp .yes{color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent);}
+  .hyp .no{color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);}
+  .hyp .why{grid-column:2/4;color:var(--muted);font-size:13px;margin:0 0 8px;line-height:1.45;}
+  figure{margin:20px 0;border:1px solid var(--hair);border-radius:6px;padding:18px;background:var(--surface);}
+  .bars{display:grid;grid-template-columns:130px 1fr;gap:9px 14px;align-items:center;}
+  .bars .rlab{font-family:var(--mono);font-size:11.5px;text-align:right;}
+  .axis{position:relative;height:24px;background:var(--surface-2);border:1px solid var(--hair);border-radius:4px;}
+  .axis .zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--hair-strong);}
+  .bar{position:absolute;top:4px;height:16px;display:flex;align-items:center;font-family:var(--mono);
+    font-size:10px;font-weight:600;color:#fff;padding:0 5px;border-radius:2px;}
+  .bar.coh{background:var(--good);left:50%;} .bar.faith{background:var(--warn);justify-content:flex-end;}
+  .fig-key{display:flex;gap:18px;margin-top:12px;font-family:var(--sans);font-size:12px;color:var(--muted);}
+  .sw{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:5px;}
+  ol,ul{padding-left:22px;} li{margin:7px 0;}
+  .path{display:flex;flex-direction:column;gap:0;}
+  .pnode{border:1px solid var(--hair-strong);background:var(--surface-2);border-radius:5px;
+    padding:9px 13px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;}
+  .pnode .pk{font-family:var(--sans);font-size:12.5px;font-weight:640;color:var(--ink);}
+  .pnode .pk em{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);margin-left:6px;}
+  .pnode .pd{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .pnode.probe{background:var(--surface);border-color:var(--hair-strong);
+    box-shadow:inset 3px 0 0 var(--accent);}
+  .pnode.key{border-color:var(--accent);}
+  .pnode.key .pk{color:var(--accent);}
+  .parrow{width:1px;height:14px;background:var(--hair-strong);margin-left:22px;}
+  .foot{font-family:var(--sans);font-size:12.5px;color:var(--faint);margin-top:40px;padding-top:14px;
+    border-top:1px solid var(--hair);line-height:1.6;}
+</style>
+
+<div class="wrap">
+<div class="rule"></div>
+<div class="venue"><span>Working paper · Radiology vision–language models</span><span>Draft · consolidated · Exp 1–6</span></div>
+
+<h1>What moves a radiology VLM: prompt format, model choice, and visual input</h1>
+<p class="sub1">Three levers, one signature — and why a rising F1 can still mislead</p>
+<p class="authors">[Author(s)]</p>
+<p class="affil">[Affiliation] · Correspondence: [email]</p>
+
+<div class="absbox">
+<h2>Abstract</h2>
+<p><span class="lbl">Background.</span> Three design choices for radiology vision–language models are usually made by habit: how the model is prompted, which model is used, and what image it is shown. We study all three without radiologist annotation, using public reports and automated scoring as the reference, and ask in each case whether an apparent improvement is a better diagnosis or merely a shifted operating point.</p>
+<p><span class="lbl">Methods.</span> A large general model (gemini-2.5-flash) and a small 8-bit, laptop-run medical model (MedGemma-4B) each read 754 chest radiographs under five prompts (direct, chain-of-thought, differential, evidence-first, uncertainty-first), fully paired. Outputs were scored for accuracy across a granularity ladder, claim-level groundedness, calibration, and blind LLM-judge reasoning quality. We then decomposed interpretation into two context-isolated calls — perception (image → findings, diagnosis forbidden) and reasoning (findings as text, no image → diagnosis) — to localise error. Finally, holding model and prompt fixed, we varied only the visual input across four conditions (1024 px baseline; 2048 px; full view plus six clinical zone crops; full view plus a crop of the true finding zone) swept resolution downward in a dose-response, and degraded image content directly — graded blur, a spatial scramble, and a blank field establishing an information floor — verifying on every call that the manipulated information actually reached the model. Finally, because the medical model runs locally, we opened its vision pathway directly: representations were extracted at every stage from raw pixels through the vision encoder to the vectors handed to the language model, and linear probes were trained at each to ask whether each finding is recoverable there at all.</p>
+<p><span class="lbl">Results.</span> Prompt format changes faithfulness and calibration: chain-of-thought reads as significantly more coherent while becoming significantly less faithful. The two models occupy opposite operating points rather than one dominating — the local medical model is far more sensitive, the general model more precise and more accurate on the normal-vs-abnormal decision (higher on 3 of 5 prompts). A structured prompt edit raised F1 in both, but decomposition showed it was pure over-calling in one (precision and accuracy fell) and a genuine gain in the other (p&lt;0.0001). The two-stage decomposition localised 77% and 93% of triage error to perception, with reasoning a faithful pass-through. Yet no visual manipulation improved perception: ΔF1 of −0.011, −0.006 and −0.004 against baseline (all intervals spanning zero), while every condition significantly increased findings reported. A 256 px image matched the 1024 px baseline on 2.7× fewer tokens, and the highest resolution was significantly worse. Degradation, by contrast, was severely damaging: F1 fell from 0.418 to 0.184 under heavy blur and to 0.168 when spatial anatomy was scrambled, and a blank image scored 0.000 while the model reported no findings at all. The image is therefore worth +0.418 F1 and +0.268 binary accuracy over priors alone. A dedicated wrong-crop control found a deliberately incorrect spatial pointer statistically indistinguishable from a correct one — numerically the better of the two — retracting an earlier reading in which misdirection appeared harmful. Crossing visual information with reasoning effort in a 2 × 2, visual information dominated by roughly sixfold (+0.168 vs −0.028), elaborated reasoning significantly lowered accuracy, and the interaction a compensatory account requires was absent. Probing the local model's own vision pathway, linear readout accuracy rose through the first third of the encoder and plateaued at AUROC 0.78 from layer 12, with the projector output matching that plateau rather than falling below it — so the vision–language interface is not where diagnostic content is lost. An untrained encoder of identical architecture was flat with depth at 0.61, below even a 32 × 32 pixel readout, establishing the curve as learned. At a matched commitment budget the interface probe recovered 129 of the 621 findings the model itself failed to report (+0.063 F1, 95% CI [+0.041, +0.084]), and a supervised readout of the same frozen representation reached 0.47 on the 13-class task where the model reached 0.31. Quantising the same model to 4 bits then dissociated the two: its representation held (probe AUROC 0.781 → 0.776) while its generated reading fell significantly (binary accuracy 0.659 → 0.596, p = 0.004; findings per study halved) — a sixfold larger cost to the readout than to the representation, measured probe-against-probe and generation-against-generation with no supervision asymmetry. Probing the model's own hidden states located the failure further still: the visual signal is flat across all thirty-four text blocks (AUROC 0.780 at the first, 0.772 at the last), and 64% of the probe-recovered misses remain linearly decodable from the exact vector generation runs from — so the concept reaches the decision point and is not expressed, rather than being lost to inattention or weak mapping. Tuning the parts of the path that precede expression then degraded the model monotonically with depth (13-class 0.307 → 0.240 → 0.106), while recoverability at the interface predicted which of the model's own misses either intervention could convert into speech — a 4.9× and 5.3× enrichment over misses the probe had not recovered.</p>
+<p><span class="lbl">Conclusions.</span> All three levers share one signature: they move how much the model commits, not how well it decides — and visual information does so in both directions, raising commitment when added and lowering it when removed. The model saturates at a strikingly low resolution, with a knee between roughly 128 and 256 pixel-equivalents: above it more information buys nothing, below it performance falls steeply. Within that regime the perception ceiling is consistent with a recognition limitation rather than an information or attention limitation, while the image itself remains responsible for essentially all task performance; where recognition fails is a question these behavioural experiments pose but cannot answer, and a representational probe locates the information as still linearly present, and learned rather than incidental, at the vision–language interface, while quantisation degrades the model's reading of that interface far more than the interface itself — so the deficit lies in what the model extracts from its own visual input rather than in what that input contains. Spatial guidance, correct or incorrect, changes only how much the model commits — as does reasoning effort, a fourth lever with the same signature. A rising F1 must be checked against precision and accuracy before it is called an improvement, and that check does not transfer across models. Results are comparative and do not speak to clinical readiness.</p>
+<p class="kw"><b>Keywords:</b> vision–language models · chest radiography · prompt engineering · perception–reasoning decomposition · calibration · evaluation methodology · measurement validity</p>
+</div>
+
+<div class="toc">
+<b>Structure.</b> §1 introduction and pre-registered hypotheses · §2 methods · §3 lever one: prompt format · §4 lever two: model choice · §5 where the error lives · §6 lever three: visual input, degradation and the information floor · §7 reasoning against visual information · §8 reference reliability · §9 opening the model: where recognition fails · §10 discussion · §11 limitations · §12 evaluation integrity and corrections · §13 reproducibility · appendix A prompts · appendix B supplementary tables
+</div>
+<h2>1 · Introduction</h2>
+<p>When a model reads a chest X-ray we usually judge only whether its final label is right. Two other properties matter for trust — whether its explanation is supported by what is visible, and whether its confidence tracks its correctness — and behind all three sits a rarely-tested question: how much do the choices we make out of habit actually matter?</p>
+<p>Three such choices structure this paper. <b>How the model is prompted</b> (§3): five reasoning scaffolds over the same instruction frame. <b>Which model is used</b> (§4): a large hosted general model against a small medical model running locally on a laptop. And <b>what image the model is shown</b> (§6): resolution, spatial decomposition, and explicit spatial guidance. Between the second and third we insert a decomposition (§5) that locates <em>where</em> in the pipeline error arises, which is what makes the third question worth asking at all.</p>
+<p>We pre-registered four hypotheses about prompt format:</p>
+<div class="hyp">
+  <span class="id">H1</span><span>Evidence-first improves groundedness.</span><span class="v no">refuted as stated</span>
+  <span class="id">H2</span><span>Uncertainty-first reduces overconfidence.</span><span class="v yes">supported</span>
+  <span class="id">H3</span><span>Chain-of-thought and differential look more convincing without being more faithful.</span><span class="v yes">supported</span>
+  <span class="id">H4</span><span>Prompt effects are larger on ambiguous cases.</span><span class="v yes">supported</span>
+</div>
+<p>To these we added three questions that are not about prompting at all: whether a smaller medical model, prompted identically, reads radiographs better than a larger general one; whether "improving" the best prompt improves the model or only its F1; and — once error had been localised to perception — whether the cause is simply that the model is shown too little of the image.</p>
+<p>A single concern runs through every section. Each lever can raise an aggregate score by making the model commit more often rather than decide better, and micro-F1 rewards that. The paper is therefore organised around decomposition: no headline number is reported without the precision, recall and accuracy that generated it.</p>
+
+<h2>2 · Methods</h2>
+
+<h3>2.1 Data</h3>
+<p>IU X-Ray (OpenI): 3,826 public, de-identified studies with free-text reports. Because the corpus is fully open it can be sent to a commercial API without a data-use agreement — the reason it, rather than a credentialed corpus, is the workhorse here. A locked, balanced 754-study test split spans six difficulty strata assigned automatically from report hedging, inter-labeler disagreement and finding counts. It was frozen before any analysis; every condition in every experiment is evaluated on exactly these studies, paired at the case level.</p>
+<p>The visual dose-response (§6.4) uses a seeded, proportionally stratified 250-study subset of the same split — every stratum within 0.002 of the full distribution, abnormal rate 0.648 against 0.651. A first-250 convenience selection was inspected and rejected as materially skewed (abnormal rate 0.72).</p>
+
+<h3>2.2 Design and prompts</h3>
+<p>Each model receives the image only, plus a one-line clinical indication; the report is held out as an independent reference, so agreement with it is agreement with a source the model could not have copied. The five prompts share one instruction frame and differ only in reasoning scaffold. Gemini's hidden reasoning is disabled so the supplied prompt is the only scaffold, keeping the direct-versus-chain-of-thought contrast clean.</p>
+
+<h3>2.3 Models and scoring</h3>
+<p>gemini-2.5-flash via API with JSON output, and MedGemma-4B at 8-bit running locally via MLX. The 4B model is prompted in free text because its perception collapses under strict JSON demands; its confidence is taken from token log-probabilities rather than self-report. Reports are labelled into the 14 CheXpert findings with CheXbert. Accuracy is hierarchy-aware — a parent finding matches its children — and reported across a granularity ladder: 13 fine classes, a reliable-11 subset excluding two classes on which the labelers themselves disagree (κ &lt; 0.4), three clinical groups, and binary any-acute triage. Coarser granularity is an easier task, not a better model, so the whole ladder is always shown.</p>
+<p>Comparisons use paired McNemar on per-case correctness, Wilcoxon signed-rank on per-study counts, and a paired bootstrap over studies for differences in micro-F1. Where a family contains several comparisons against a common baseline, p-values are Benjamini–Hochberg corrected and both raw and corrected values are reported. The models are not deterministic at temperature 0 — two identical 24-study pilots differed by four points in flag rate — so conclusions rest on paired tests and intervals, never on point differences.</p>
+
+<h3>2.4 Two-stage decomposition</h3>
+<p>To separate seeing from reasoning, interpretation is split into two calls that share no context. <b>Stage A</b> reads the image into per-finding observations with the diagnosis explicitly forbidden. <b>Stage B</b> receives those frozen findings as text, with no image, and produces a diagnosis from them alone. Scoring Stage A measures perception; scoring Stage B measures reasoning conditioned on whatever was actually perceived.</p>
+
+<h3>2.5 Visual conditions and manipulation verification</h3>
+<p>For §6, model and prompt are held fixed and only the image payload varies. Every condition's image parts are rendered to disk in advance and transmitted with client-side resizing disabled, so all arms traverse a byte-identical transmission path and differ only in pixel content; this also makes each part an inspectable file, and crop geometry and radiographic laterality were verified visually before any condition was run and locked by unit test.</p>
+<p>Because an ablation on visual information is meaningless if the information never arrives, the API-reported prompt-token count and image-part count were recorded on every call and each condition was gated on that record before committing to a full run. Two API behaviours found this way materially shaped the design and are reported in §6.5.</p>
+<h2>3 · Lever one — prompt format</h2>
+
+<h3>3.1 Diagnostic performance</h3>
+<p>Evidence-oriented prompts lead for the general model (Table 1). Absolute finding-level F1 is modest, and expectedly so: a 2025 supervised ensemble reaches only ~0.39 F1 on this task, and micro-F1 gives no credit for correctly clearing a normal chest, which is most of the corpus.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 1.</b> <span class="cap">Micro-F1 by prompt and granularity, both models (CheXbert reference, hierarchy-aware, n = 754). H1–H4 are tested on Gemini, where evidence-first and uncertainty-first form a top tier. MedGemma leads on the coarse columns — but see §4: that reflects over-calling, not better fine-grained reading.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary</th></tr></thead>
+<tbody>
+<tr class="grp g"><td colspan="5">gemini-2.5-flash · general, API</td></tr>
+<tr><td class="lbl">direct</td><td>0.302</td><td>0.323</td><td>0.412</td><td>0.559</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.333</td><td>0.356</td><td>0.444</td><td>0.596</td></tr>
+<tr><td class="lbl">differential</td><td>0.307</td><td>0.330</td><td>0.415</td><td class="hi">0.627</td></tr>
+<tr><td class="lbl">evidence-first</td><td class="hi">0.367</td><td class="hi">0.391</td><td class="hi">0.482</td><td>0.585</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.359</td><td>0.384</td><td>0.477</td><td>0.621</td></tr>
+<tr class="grp m"><td colspan="5">MedGemma-4B · medical, local, 8-bit</td></tr>
+<tr><td class="lbl">direct</td><td class="hi">0.299</td><td class="hi">0.310</td><td>0.480</td><td class="hi">0.742</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.290</td><td>0.302</td><td>0.509</td><td>0.705</td></tr>
+<tr><td class="lbl">differential</td><td>0.297</td><td>0.311</td><td>0.491</td><td>0.724</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.289</td><td>0.299</td><td>0.465</td><td>0.614</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.297</td><td>0.306</td><td class="hi">0.513</td><td>0.699</td></tr>
+</tbody></table></div>
+
+<h3>3.2 H3 — reasoning that reads better without being more faithful</h3>
+<p>The central prompt finding. Chain-of-thought makes the output significantly more coherent-sounding and significantly less faithful.</p>
+<figure>
+<div class="bars">
+<div class="rlab">chain-of-thought</div>
+<div class="axis"><div class="zero"></div><div class="bar faith" style="right:50%;width:34%;">−0.229</div><div class="bar coh" style="width:37%;">+0.248</div></div>
+<div class="rlab">evidence-first</div>
+<div class="axis"><div class="zero"></div><div class="bar faith" style="right:50%;width:18%;">−0.121</div><div class="bar coh" style="width:20%;">+0.131</div></div>
+<div class="rlab">differential</div>
+<div class="axis"><div class="zero"></div><div class="bar faith" style="right:50%;width:38%;">−0.251</div></div>
+<div class="rlab">uncertainty-first</div>
+<div class="axis"><div class="zero"></div><div class="bar faith" style="right:50%;width:24%;">−0.162</div></div>
+</div>
+<div class="fig-key"><span><span class="sw" style="background:var(--good)"></span>coherence Δ</span><span><span class="sw" style="background:var(--warn)"></span>faithfulness Δ</span></div>
+<div style="font-family:var(--sans);font-size:12.5px;color:var(--muted);padding-top:12px;line-height:1.5;">
+<b>Figure 1.</b> Change from direct on two blind-judge axes, paired Wilcoxon, n = 754. Chain-of-thought: coherence +0.248, faithfulness −0.229, both p&lt;0.0001. An independent rule-based claim adjudicator agrees in direction for every prompt. Chain-of-thought and evidence-first dissociate; differential and uncertainty-first fall on both axes.</div>
+</figure>
+<p>H2 is supported — uncertainty-first is the best-calibrated prompt (ECE 0.641, lowest mean confidence), though every prompt is badly overconfident, with overconfidence gaps of +0.63 to +0.71. H4 is supported: prompt-effect spread is largest on rare (0.193) and hard-multi (0.158) strata and smallest on easy-abnormal (0.046). H1 is refuted as stated: direct has the highest support rate (0.850 vs 0.821) only because it barely commits, while evidence-first surfaces 2.25× more claims at near-equal fidelity.</p>
+<p>MedGemma's confidence is no more informative: mean confidence is 85.0 on correct cases and 85.1 on wrong ones. Token log-probability tracks fluency, not correctness — the same uninformative-confidence failure the general model shows by a different mechanism.</p>
+
+<h3>3.3 Does structuring the best prompt actually help?</h3>
+<p>We tried to improve evidence-first by making its finding stage a machine-readable table. Every aggregate F1 rose for both models (Table 2) — and the two rises mean opposite things (Table 3).</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 2.</b> <span class="cap">Structured evidence-first versus evidence-first, both models, full test split. F1 rises everywhere.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>13-class</th><th>reliable</th><th>3-group</th><th>binary F1</th></tr></thead>
+<tbody>
+<tr class="grp g"><td colspan="5">Gemini</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.367</td><td>0.391</td><td>0.482</td><td>0.585</td></tr>
+<tr><td class="lbl">evidence-structured</td><td class="up">0.404</td><td class="up">0.428</td><td class="up">0.567</td><td class="up">0.724</td></tr>
+<tr class="grp m"><td colspan="5">MedGemma</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.289</td><td>0.299</td><td>0.465</td><td>0.614</td></tr>
+<tr><td class="lbl">evidence-structured</td><td class="up">0.307</td><td class="up">0.320</td><td class="up">0.524</td><td class="up">0.736</td></tr>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<caption><b>Table 3.</b> <span class="cap">The same comparison decomposed. For Gemini the structured prompt flags 76% of studies abnormal when only 56% are: precision collapses and accuracy falls — a recall-for-precision shift, not better diagnosis (both differences n.s., p = 0.13 and 0.50). For MedGemma precision and recall rise together and accuracy climbs 12 points (paired McNemar, p&lt;0.0001).</span></caption>
+<thead><tr><th class="lbl">binary triage</th><th>find/study</th><th>flags abn</th><th>precision</th><th>recall</th><th>F1</th><th>accuracy</th></tr></thead>
+<tbody>
+<tr class="grp g"><td colspan="7">Gemini — an F1 illusion</td></tr>
+<tr><td class="lbl">evidence-first</td><td>1.00</td><td>27%</td><td>0.893</td><td>0.435</td><td>0.585</td><td>0.654</td></tr>
+<tr><td class="lbl">evidence-structured</td><td class="dn">2.31</td><td class="dn">76%</td><td class="dn">0.629</td><td class="up">0.851</td><td>0.724</td><td class="dn">0.635</td></tr>
+<tr class="grp m"><td colspan="7">MedGemma — a genuine gain</td></tr>
+<tr><td class="lbl">evidence-first</td><td>1.96</td><td>55%</td><td>0.619</td><td>0.610</td><td>0.614</td><td>0.570</td></tr>
+<tr><td class="lbl">evidence-structured</td><td>2.37</td><td>61%</td><td class="up">0.707</td><td class="up">0.768</td><td>0.736</td><td class="up">0.691</td></tr>
+</tbody></table></div>
+<div class="box"><div class="t">The same edit, opposite outcomes</div>
+<p>Structuring evidence-first is neither a universal improvement nor a universal artifact — it depends on the model. For Gemini it is an F1 illusion: the model over-calls and every aggregate metric rewards that except accuracy. For MedGemma it is a real gain on every axis at once. A single score can move for the wrong reason, and the reason is model-specific.</p></div>
+
+<h2>4 · Lever two — model choice</h2>
+<p>The same five prompts and the same 754 studies, on a small medical model on a laptop and a large general API model. They do not rank cleanly; they sit at opposite operating points, and which "wins" depends entirely on the metric.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 4.</b> <span class="cap">Binary-triage operating points across the five prompts (true abnormal base rate 0.56). This asymmetry is the whole story behind the metric split in Table 5.</span></caption>
+<thead><tr><th class="lbl">model</th><th>find/study</th><th>flags abn</th><th>precision</th><th>recall</th></tr></thead>
+<tbody>
+<tr><td class="lbl" style="color:var(--gem)">Gemini — large general (API)</td><td>0.5–1.0</td><td>25–30%</td><td>0.90</td><td>0.41–0.48</td></tr>
+<tr><td class="lbl" style="color:var(--med)">MedGemma — small medical (local)</td><td>2.0–2.8</td><td>55–76%</td><td>0.61–0.68</td><td>0.61–0.82</td></tr>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<caption><b>Table 5.</b> <span class="cap">Binary-triage accuracy — the fair normal-vs-abnormal metric — with paired McNemar. On F1 MedGemma looks far ahead; on accuracy the picture reverses.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>MedGemma</th><th>Gemini</th><th class="lbl">higher</th><th class="lbl">McNemar</th></tr></thead>
+<tbody>
+<tr><td class="lbl">direct</td><td>0.679</td><td>0.641</td><td class="lbl">MedGemma</td><td class="lbl">p = 0.14 n.s.</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.684</td><td>0.656</td><td class="lbl">MedGemma</td><td class="lbl">p = 0.21 n.s.</td></tr>
+<tr><td class="lbl">differential</td><td>0.601</td><td>0.670</td><td class="lbl">Gemini</td><td class="lbl">p = 0.015 *</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.570</td><td>0.654</td><td class="lbl">Gemini</td><td class="lbl">p = 0.0004 ***</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.603</td><td>0.675</td><td class="lbl">Gemini</td><td class="lbl">p = 0.007 **</td></tr>
+</tbody></table></div>
+<div class="box warn"><div class="t">Correction — no clean winner</div>
+<p>An earlier reading of this comparison called MedGemma the triage winner "on all five prompts". That was an F1 artifact of over-calling: F1 rewards recall, and MedGemma names two to three times more findings than Gemini. On the fair accuracy metric neither model dominates — Gemini is more precise and more accurate overall, significantly so on 3 of 5 prompts, while MedGemma is more sensitive. The defensible claim is a sensitivity/specificity trade-off chosen by clinical goal, screening versus confirmatory, not "the small medical model wins".</p></div>
+<p>Two further points. Reasoning-format effects are model-dependent: MedGemma's least conservative prompts maximise its recall-driven F1 while Gemini's evidence-oriented prompts maximise precision, so prompt tuning does not transfer between models. And Gemini remains better at fine-grained finding-naming, with mean 13-class F1 0.333 against 0.294.</p>
+<h2>5 · Where the error lives</h2>
+<p>Both levers so far change the operating point. Neither says <em>where</em> in the pipeline the errors originate — and a wrong answer produced in a single forward pass cannot be charged to bad seeing rather than bad reasoning. The two-stage decomposition (§2.4) settles it.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 6.</b> <span class="cap">Perception versus reasoning, both models, n = 754. The two models land at nearly the same perception ceiling despite a large difference in size and specialisation, and in both the reasoning stage is a largely faithful pass-through of whatever it was handed.</span></caption>
+<thead><tr><th class="lbl">model</th><th>perception ceiling</th><th>+ reasoning</th><th>reasoning fidelity</th><th>errors already perceptual</th></tr></thead>
+<tbody>
+<tr><td class="lbl" style="color:var(--gem)">gemini-2.5-flash</td><td>0.655</td><td>0.674</td><td>0.833</td><td class="hi">77%</td></tr>
+<tr><td class="lbl" style="color:var(--med)">MedGemma-4B-8bit</td><td>0.659</td><td>0.639</td><td>0.967</td><td class="hi">93%</td></tr>
+</tbody></table></div>
+<p>Given the findings, reasoning is not the bottleneck. When Gemini's reasoning overrides its own perception it is right 56% of the time — a coin flip — and MedGemma's fidelity of 0.967 makes it a near-deterministic pass-through, overriding its findings just 25 times and being right on 20% of those. The residual error lives upstream.</p>
+<p>Isolating perception also explains §3.3's illusion-versus-gain split mechanistically: forcing structure makes Gemini's perception <em>report</em> more (findings/study 1.00 → 2.47, precision 0.89 → 0.65, accuracy flat) while making MedGemma's perception <em>tighter</em> (1.96 → 1.75, precision 0.62 → 0.73, accuracy 0.570 → 0.659). The medical model's perception responds to the scaffold; the general model's does not.</p>
+
+<h2>6 · Lever three — visual input</h2>
+<p>If four-fifths of error is perceptual, the most immediate candidate cause is that the model is shown too little: the pipeline downsamples ~2494 × 2048 px radiographs to 1024 px, discarding four to six times the pixels. Holding model and prompt fixed, four conditions vary only the image.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 7.</b> <span class="cap">The four visual conditions. Crops are cut from the native image and only then downscaled. Payload is the median measured prompt-token count, recorded per call rather than assumed.</span></caption>
+<thead><tr><th class="lbl">condition</th><th class="lbl">image parts transmitted</th><th>parts</th><th>payload</th><th class="lbl">isolates</th></tr></thead>
+<tbody>
+<tr class="sec-a"><td class="lbl">A · baseline</td><td class="lbl">frontal @ 1024 px</td><td>1</td><td>1647</td><td class="lbl">control</td></tr>
+<tr class="sec-b"><td class="lbl">B · higher resolution</td><td class="lbl">frontal @ 2048 px</td><td>1</td><td>2936</td><td class="lbl">raw resolution</td></tr>
+<tr class="sec-c"><td class="lbl">C · multi-crop</td><td class="lbl">frontal + 6 clinical zone crops</td><td>7</td><td>2229</td><td class="lbl">spatial decomposition</td></tr>
+<tr class="sec-d"><td class="lbl">D · oracle</td><td class="lbl">frontal + 1 crop of the true zone</td><td>2</td><td>884</td><td class="lbl">spatial guidance</td></tr>
+</tbody></table></div>
+<p>Condition D's zone is parsed from the report's controlled anatomic vocabulary (<code>Consolidation/lung/base/left</code>) onto a 3 × 2 grid of standard review zones; 224 of 754 studies (29.7%) carry a usable zone. Critically, <b>every</b> study receives exactly one crop — normals and non-localizable abnormals get a zone drawn from the marginal distribution of the genuine ones. Without this, the mere presence of a crop would announce abnormality. Crop presence, count and marginal distribution therefore carry no signal; only crop <em>correctness</em> varies.</p>
+
+<h3>6.1 All four conditions compared</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table 8.</b> <span class="cap">Diagnostic performance across all four visual conditions, n = 754 paired, identical prompts. ΔF1 is 13-class micro-F1 against baseline with a paired bootstrap interval; McNemar tests per-case binary correctness, shown raw → BH-corrected. Nothing reaches significance.</span></caption>
+<thead><tr><th class="lbl">condition</th><th>payload</th><th>13-cls F1</th><th class="lbl">ΔF1 [95% CI]</th><th>prec</th><th>rec</th><th>rel-11</th><th>3-grp</th><th>bin acc</th><th class="lbl">McNemar</th></tr></thead>
+<tbody>
+<tr class="ref sec-a"><td class="lbl">A · baseline</td><td>1647</td><td>0.3879</td><td class="lbl">— reference —</td><td>0.293</td><td>0.576</td><td>0.4056</td><td>0.5645</td><td>0.6512</td><td class="lbl">—</td></tr>
+<tr class="sec-b"><td class="lbl">B · higher resolution</td><td>2936</td><td>0.3774</td><td class="lbl">−0.011 [−0.024, +0.003]</td><td>0.279</td><td>0.585</td><td>0.3962</td><td>0.5665</td><td>0.6326</td><td class="lbl">0.207 → 0.310</td></tr>
+<tr class="sec-c"><td class="lbl">C · multi-crop</td><td>2229</td><td>0.3817</td><td class="lbl">−0.006 [−0.021, +0.009]</td><td>0.281</td><td>0.595</td><td>0.4000</td><td>0.5714</td><td>0.6499</td><td class="lbl">1.000 → 1.000</td></tr>
+<tr class="sec-d"><td class="lbl">D · oracle</td><td>884</td><td>0.3836</td><td class="lbl">−0.004 [−0.017, +0.010]</td><td>0.285</td><td>0.587</td><td>0.4059</td><td>0.5670</td><td>0.6260</td><td class="lbl">0.059 → 0.178</td></tr>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<caption><b>Table 9.</b> <span class="cap">The same four conditions on reporting behaviour. Here — unlike Table 8 — every difference is significant, and all in the same direction.</span></caption>
+<thead><tr><th class="lbl">condition</th><th>find/study</th><th class="lbl">Wilcoxon</th><th>flags abn</th><th>FP/study</th><th>FN/study</th><th>Stage-B acc</th><th>fidelity</th><th>% err perceptual</th></tr></thead>
+<tbody>
+<tr class="ref sec-a"><td class="lbl">A · baseline</td><td>2.538</td><td class="lbl">—</td><td>72.9%</td><td>1.796</td><td>0.548</td><td>0.6830</td><td>0.8382</td><td>79.5%</td></tr>
+<tr class="sec-b"><td class="lbl">B · higher resolution</td><td class="dn">2.708</td><td class="lbl"><b>0.0002 → 0.0003</b></td><td>77.2%</td><td class="dn">1.954</td><td>0.536</td><td>0.6830</td><td>0.8223</td><td>79.9%</td></tr>
+<tr class="sec-c"><td class="lbl">C · multi-crop</td><td class="dn">2.733</td><td class="lbl"><b>&lt;0.0001 → &lt;0.0001</b></td><td>77.1%</td><td class="dn">1.966</td><td>0.523</td><td>0.6565</td><td>0.8263</td><td>75.7%</td></tr>
+<tr class="sec-d"><td class="lbl">D · oracle</td><td class="dn">2.658</td><td class="lbl"><b>0.0078 → 0.0078</b></td><td>79.7%</td><td class="dn">1.901</td><td>0.533</td><td>0.6393</td><td>0.8488</td><td>80.9%</td></tr>
+</tbody></table></div>
+<div class="box"><div class="t">Reading Tables 8 and 9 together</div>
+<p>Not one accuracy or F1 difference survives correction, and all three intervals straddle zero — while every reporting difference is significant and in the same direction. Four times the pixels, six framed anatomical regions, and an explicit pointer to the correct region all produce the identical signature: more findings named, more false positives, lower precision, no better diagnosis. It is not one manipulation failing; it is the visual-information hypothesis failing three times by structurally different routes.</p></div>
+
+<h3>6.2 Case-level accounting</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table 10.</b> <span class="cap">Case-level outcomes over all 754 studies, counted in both directions rather than selected for favourability. For D the contrast is between its own correct-zone and arbitrary-zone subgroups.</span></caption>
+<thead><tr><th class="lbl">condition</th><th>recovers a missed finding</th><th>introduces a new false positive</th><th class="lbl">ratio</th></tr></thead>
+<tbody>
+<tr class="sec-b"><td class="lbl">B · higher resolution</td><td>56</td><td class="dn">275</td><td class="lbl">1 : 4.9</td></tr>
+<tr class="sec-c"><td class="lbl">C · multi-crop</td><td>58</td><td class="dn">277</td><td class="lbl">1 : 4.8</td></tr>
+<tr class="sec-d"><td class="lbl">D · oracle (correct vs arbitrary)</td><td>10 rescued</td><td>8 broken</td><td class="lbl">1 : 0.8</td></tr>
+</tbody></table></div>
+<p>Added visual information recovers roughly one genuinely missed finding for every five it invents. The oracle rescues are legible on inspection — <em>"opacity in left lung base"</em>, <em>"left base atelectasis"</em>, each with the correct zone supplied — but there are ten across 224 eligible studies.</p>
+
+<h3>6.3 Being told where to look</h3>
+<p>Attaching a second image part <em>halves</em> the delivered payload (1646 → 883 tokens; §6.5), so a raw D-versus-baseline comparison would confound guidance with less information, and the pre-registered payload gate correctly failed. The leakage control supplies the remedy: correct-zone and arbitrary-zone studies take an identical payload hit (883 vs 884 tokens), so it cancels in a difference-in-differences with each subgroup its own paired control.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 11.</b> <span class="cap">Condition D, difference-in-differences on binary triage. The DiD is significant, but decomposition shows it is produced by misdirection harming rather than correct direction helping.</span></caption>
+<thead><tr><th class="lbl">subgroup</th><th>n</th><th>baseline</th><th>oracle</th><th>Δ</th><th class="lbl">paired test</th></tr></thead>
+<tbody>
+<tr><td class="lbl">correct zone</td><td>224</td><td>0.7232</td><td>0.7411</td><td>+0.018</td><td class="lbl">p = 0.522 · n.s.</td></tr>
+<tr><td class="lbl">arbitrary zone</td><td>530</td><td>0.6208</td><td class="dn">0.5774</td><td class="dn">−0.043</td><td class="lbl"><b>p = 0.008 · significant</b></td></tr>
+<tr><td class="lbl"><b>difference-in-differences</b></td><td>754</td><td colspan="2" class="lbl">payload-matched</td><td class="hi">+0.061</td><td class="lbl">CI [+0.010, +0.113], p = 0.022</td></tr>
+</tbody></table></div>
+<p>Read on its own this looks decisive: the model appears steerable, degrading when misdirected while gaining nothing from correct direction. On per-study finding overlap the DiD is +0.011 (CI −0.015 to +0.035, p = 0.42). We reported exactly that reading in an earlier draft. A dedicated control shows it is wrong.</p>
+
+<h4>The wrong-crop control</h4>
+<p>The difference-in-differences compares two subgroups that differ in more than crop correctness. Studies with a usable zone are abnormal by construction; those without are largely normal. Their abnormality base rates are 0.795 and 0.462. A design that varies crop correctness <em>and</em> case mix together cannot attribute an effect to either.</p>
+<p>The clean test restricts attention to the 224 studies that <em>have</em> a true zone and gives them a deliberately incorrect one, drawn from the marginal distribution of true zones with the study's own zone rejected. Sampling uniformly over the other five zones was rejected during construction: true zones here are about 60% basal, so uniform wrong zones land on apices, and any harm could then mean "pointed at a quiet region" rather than "pointed incorrectly". Correct and wrong crops are compared on the <em>same</em> studies at identical payload, so correctness is the only variable and no difference-in-differences is needed.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 12.</b> <span class="cap">Wrong-crop control, n = 224, every study carrying a known true zone (abnormal base rate 0.795). Correct and wrong crops are payload-identical at 884 tokens. Paired bootstrap for ΔF1; McNemar BH-corrected across the three comparisons.</span></caption>
+<thead><tr><th class="lbl">arm</th><th>payload</th><th>13-cls F1</th><th>bin acc</th><th>find/study</th><th>flags abn</th><th class="lbl">vs baseline</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">baseline (no crop)</td><td>1647</td><td>0.4480</td><td>0.7232</td><td>2.844</td><td>79.5%</td><td class="lbl">— reference —</td></tr>
+<tr><td class="lbl">correct crop</td><td>884</td><td>0.4544</td><td>0.7411</td><td>2.933</td><td>83.9%</td><td class="lbl">ΔF1 +0.006 [−0.013, +0.027] n.s.</td></tr>
+<tr><td class="lbl"><b>wrong crop</b></td><td>884</td><td class="hi">0.4658</td><td class="hi">0.7723</td><td>3.004</td><td>86.2%</td><td class="lbl">ΔF1 +0.018 [−0.007, +0.042] n.s.</td></tr>
+</tbody></table></div>
+
+<p>Pointing at the wrong region does not hurt. It is numerically the <em>best</em> arm, and wrong-versus-correct is ΔF1 +0.011 (CI −0.013 to +0.034, McNemar FDR 0.29): no detectable difference in either direction.</p>
+
+<div class="box warn"><div class="t">Retraction — the difference-in-differences was a base-rate artifact</div>
+<p>An earlier draft concluded from Table 11 that misdirection significantly harms while correct direction cannot rescue. That is withdrawn. The −0.043 attributed to misdirection was crop-induced over-flagging on a normal-heavy subgroup: adding <em>any</em> crop raises the flag rate (79.5% → 83.9% correct → 86.2% wrong), which improves accuracy when cases are mostly abnormal and damages it when they are mostly normal. The subgroups' base rates of 0.795 and 0.462 are sufficient to produce the entire effect.</p>
+<p>The corrected claim is simpler and consistent with everything else reported here: <b>spatial guidance of any kind acts only as a commitment nudge, and the crop's location carries no information the model uses.</b> This removes the one result that suggested spatial steerability, and strengthens rather than weakens the recognition account — the model is not failing to recognise what it is pointed at; it is not using the pointer at all.</p></div>
+
+
+<h3>6.4 Resolution dose-response</h3>
+<p>Condition B tested one step upward, which cannot distinguish saturation from insensitivity. Descending settles it.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 13.</b> <span class="cap">Resolution dose-response, n = 250, identical studies at every rung, Δ against the 1024 px reference by paired bootstrap. The only significant difference in the sweep is that the highest resolution is the worst.</span></caption>
+<thead><tr><th class="lbl">rung</th><th>payload</th><th>13-cls F1</th><th class="lbl">Δ vs 1024 [95% CI]</th><th>bin acc</th><th>find/study</th><th>FP/study</th></tr></thead>
+<tbody>
+<tr><td class="lbl">256 px</td><td>614</td><td class="up">0.4239</td><td class="lbl">+0.006 [−0.022, +0.033] n.s.</td><td>0.6840</td><td>2.224</td><td class="up">1.472</td></tr>
+<tr><td class="lbl">512 px</td><td>1646</td><td>0.4055</td><td class="lbl">−0.013 [−0.036, +0.010] n.s.</td><td>0.6920</td><td>2.444</td><td>1.680</td></tr>
+<tr class="ref"><td class="lbl">1024 px <em>(reference)</em></td><td>1646</td><td>0.4180</td><td class="lbl">—</td><td>0.6960</td><td>2.580</td><td>1.764</td></tr>
+<tr><td class="lbl">2048 px</td><td>2936</td><td class="dn">0.3882</td><td class="lbl"><b>−0.030 [−0.053, −0.009] sig.</b></td><td>0.6640</td><td class="dn">2.736</td><td class="dn">1.948</td></tr>
+</tbody></table></div>
+<p>A quarter-resolution image reads chest radiographs as well as the baseline on 2.7× fewer tokens, and the highest resolution reads them significantly worse. What rises monotonically with payload is commitment, not accuracy: findings per study 2.22 → 2.74, false positives 1.47 → 1.95. An internal control supports treating delivered payload rather than file size as the independent variable: 512 px and 1024 px differ fourfold on disk, deliver identical tokens, and produce indistinguishable outcomes.</p>
+<p>Read alone, this sweep suggests the model is simply insensitive to resolution. §6.5 shows that reading is too strong: the sweep's floor at 256 px is still above the point where performance breaks. The accurate statement is <em>saturation with a very low knee</em>, and locating that knee requires degrading the image further than resolution alone conveniently allows.</p>
+
+<h3>6.5 Controlled degradation and the information floor</h3>
+<p>The dose-response asks how much detail helps. Once a quarter-resolution image performs as well as the baseline, a sharper question follows: <em>is the image being used at all?</em> A ladder of degradations cannot answer that without a zero point, so alongside graded blur and a spatial scramble we include a <b>blank</b> condition — a uniform grey field carrying no information. Whatever it scores is what the model obtains from priors alone: the clinical indication, the base rate, and the prompt. Every rung is fixed at 1024 px and one image part, so resolution and part count are held constant and only image <em>content</em> is degraded.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 14.</b> <span class="cap">Controlled degradation, n = 250, identical studies at every rung. ΔF1 by paired bootstrap; McNemar on per-case triage, raw → BH-corrected. Unlike every manipulation in §6.1–6.4, these differences are large.</span></caption>
+<thead><tr><th class="lbl">rung</th><th>13-cls F1</th><th class="lbl">ΔF1 [95% CI]</th><th>prec</th><th>rec</th><th>bin acc</th><th>find/study</th><th>flags abn</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">baseline (undegraded)</td><td>0.4180</td><td class="lbl">— reference —</td><td>0.316</td><td>0.616</td><td>0.6960</td><td>2.580</td><td>72.4%</td></tr>
+<tr><td class="lbl">blur σ = 4</td><td>0.3741</td><td class="lbl">−0.044 [−0.090, −0.002] <b>sig</b></td><td class="up">0.350</td><td class="dn">0.402</td><td>0.6520</td><td>1.520</td><td>42.4%</td></tr>
+<tr><td class="lbl">blur σ = 12</td><td class="dn">0.1843</td><td class="lbl">−0.234 [−0.300, −0.166] <b>sig</b></td><td class="up">0.388</td><td class="dn">0.121</td><td>0.5040</td><td>0.412</td><td>14.8%</td></tr>
+<tr><td class="lbl">scramble (8 × 8 tiles)</td><td class="dn">0.1683</td><td class="lbl">−0.250 [−0.300, −0.200] <b>sig</b></td><td>0.239</td><td class="dn">0.130</td><td>0.5000</td><td>0.720</td><td>13.6%</td></tr>
+<tr><td class="lbl"><b>blank (grey field)</b></td><td class="dn">0.0000</td><td class="lbl">−0.418 [−0.459, −0.374] <b>sig</b></td><td>—</td><td>—</td><td class="dn">0.4280</td><td class="dn">0.000</td><td class="dn">0%</td></tr>
+</tbody></table></div>
+
+<div class="box"><div class="t">The information span</div>
+<p>Baseline minus blank is what the image is worth over and above priors: <b>ΔF1 = +0.418</b> and <b>+0.268 binary accuracy</b>. The image supplies essentially all of the finding-level performance. Whatever else is true of this system, it is not solving the task from the indication text and the base rate.</p></div>
+
+<p>Four observations follow. First, <b>given a blank image the model reports zero findings and calls every study normal</b> — its accuracy of 0.428 is exactly the normal base rate. It abstains rather than confabulating, which means the over-calling documented in §6.1 is genuinely driven by image content, not by priors leaking through the prompt.</p>
+<p>Second, degradation is the mirror image of §6.1–6.4. Removing information monotonically <em>reduces</em> commitment (findings per study 2.58 → 1.52 → 0.41 → 0) and <em>raises</em> precision (0.316 → 0.350 → 0.388) while recall collapses (0.616 → 0.402 → 0.121). Adding information raised commitment and lowered precision; removing it does the reverse. Visual information operates as a commitment dial in both directions.</p>
+<p>Third, the scramble condition scores about the same as severe blur (0.168 vs 0.184). Destroying spatial anatomy while preserving local texture and the global histogram is as damaging as destroying fine detail, so the model is reading anatomical structure rather than texture statistics alone.</p>
+<p>Fourth, and correcting §6.4: blur at σ = 4 removes detail below roughly eight pixels — approximately a 128-pixel-equivalent image — and it <em>does</em> significantly hurt, where 256 px did not. The knee therefore lies between about 128 and 256 pixel-equivalents. The model saturates at a surprisingly low resolution, is insensitive above it, and degrades steeply below it. This bounds rather than contradicts §6.1–6.4: more visual information than the knee buys nothing, but the image itself is doing nearly all the work.</p>
+
+<h3>6.6 Two API behaviours that constrain any such experiment</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table 15.</b> <span class="cap">Measured prompt-token count by configuration (single study). Resolution reaches the model only with the high media-resolution setting <em>and</em> exactly one image part; and the payload is quantized, not continuous.</span></caption>
+<thead><tr><th class="lbl">media resolution</th><th class="lbl">parts</th><th>256</th><th>512</th><th>768</th><th>1024</th><th>1536</th><th>2048</th></tr></thead>
+<tbody>
+<tr><td class="lbl">HIGH</td><td class="lbl">1</td><td>610</td><td>1642</td><td>1642</td><td>1643</td><td>1642</td><td class="up">2933</td></tr>
+<tr><td class="lbl">HIGH</td><td class="lbl">2</td><td colspan="6" class="lbl">869 at every resolution — the setting is ignored</td></tr>
+<tr><td class="lbl">unset</td><td class="lbl">1</td><td colspan="6" class="lbl">611 at every resolution</td></tr>
+</tbody></table></div>
+<p>A second image part causes the high-resolution setting to be ignored and the payload pinned, so sending a lateral view alongside a frontal silently discards all the extra frontal detail. And the payload is quantized into three effective levels: 512, 768, 1024 and 1536 px are the same request. Four of six originally planned dose rungs were consequently the same dose and were dropped rather than reported as independent measurements.</p>
+
+<h2>7 · Reasoning effort against visual information</h2>
+<p>Sections 3–6 examined three levers separately. One combination has not been tested: what happens when reasoning effort and visual information are varied <em>together</em>. The perception-bound account makes a falsifiable prediction here. If error is dominated by what the model sees, then working harder at the reasoning stage should do little at either visual level, and — the sharper prediction — should not help disproportionately when vision is degraded. If instead elaborated reasoning rescues a degraded read, reasoning is compensatory and the account is too strong.</p>
+<p>The two-stage architecture makes this nearly free. Stage B is text-only, and Stage-A reads at two visual levels already exist, so the visual factor costs nothing to vary and Stage A is byte-identical within each level. The reasoning factor swaps one Stage-B prompt for another over the same frozen findings: commit directly, or first weigh the findings, name the clinical picture they are collectively consistent with, and dismiss an alternative.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 16.</b> <span class="cap">Visual information × reasoning effort, binary-triage accuracy, n = 250 paired studies (abnormal base rate 0.572). Effects by paired bootstrap over studies; simple effects by paired McNemar.</span></caption>
+<thead><tr><th class="lbl">visual</th><th class="lbl">reasoning</th><th>bin acc</th><th>flags abn</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">intact (1024 px)</td><td class="lbl">direct</td><td class="hi">0.6960</td><td>55.6%</td></tr>
+<tr><td class="lbl">intact (1024 px)</td><td class="lbl">elaborated</td><td class="dn">0.6440</td><td class="dn">48.0%</td></tr>
+<tr><td class="lbl">degraded (blur σ = 12)</td><td class="lbl">direct</td><td>0.5040</td><td>14.8%</td></tr>
+<tr><td class="lbl">degraded (blur σ = 12)</td><td class="lbl">elaborated</td><td>0.5000</td><td>14.4%</td></tr>
+</tbody></table></div>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 17.</b> <span class="cap">Decomposition of the 2 × 2. Visual information dominates reasoning effort by roughly sixfold; elaborated reasoning significantly <em>lowers</em> accuracy; and the interaction that a compensatory account requires is absent.</span></caption>
+<thead><tr><th class="lbl">effect</th><th>estimate</th><th class="lbl">95% CI</th><th class="lbl">verdict</th></tr></thead>
+<tbody>
+<tr><td class="lbl">Visual (intact − degraded)</td><td class="hi">+0.1680</td><td class="lbl">[+0.090, +0.240]</td><td class="lbl"><b>significant</b></td></tr>
+<tr><td class="lbl">Reasoning (elaborated − direct)</td><td class="dn">−0.0280</td><td class="lbl">[−0.052, −0.004]</td><td class="lbl"><b>significant, and negative</b></td></tr>
+<tr><td class="lbl">Interaction (reasoning gain when degraded − when intact)</td><td>+0.0480</td><td class="lbl">[+0.000, +0.096]</td><td class="lbl">n.s. (CI touches zero)</td></tr>
+<tr><td class="lbl">Simple effect · intact</td><td class="dn">−0.0520</td><td class="lbl">n01 = 24, n10 = 11</td><td class="lbl">McNemar p = 0.043 <b>sig</b></td></tr>
+<tr><td class="lbl">Simple effect · degraded</td><td>−0.0040</td><td class="lbl">n01 = 1, n10 = 0</td><td class="lbl">McNemar p = 1.000 n.s.</td></tr>
+</tbody></table></div>
+
+<p>Three things follow. Visual information matters roughly six times as much as reasoning effort. Reasoning does <em>not</em> compensate for degraded perception: the interaction the compensatory account requires is absent, which is the perception-bound prediction surviving a test that could have falsified it. And elaborated reasoning is not neutral but mildly <em>harmful</em>, significantly so when vision is intact.</p>
+
+<div class="box"><div class="t">A fourth instance of the same signature</div>
+<p>The mechanism behind that harm is by now familiar. Elaborated reasoning lowers the flag rate from 55.6% to 48.0% while the true abnormality rate is 57.2%; moving away from the base rate costs accuracy. Reasoning effort is therefore another commitment dial, joining prompt format, model choice and visual input. Four levers of entirely different kinds — how the model is asked, which model it is, what image it sees, and how hard it reasons — all move the same quantity, and none of them moves diagnostic quality. It is also the mechanism behind H3 seen from the other end: chain-of-thought produced more coherent and less faithful text in §3, and here the same scaffold applied to the reasoning stage measurably lowers accuracy.</p></div>
+
+<p>One caveat bounds the interaction result. The degraded cell sits at 0.504 accuracy with only 14.8% of studies flagged, close to the 0.428 that "call everything normal" would score. There is little room left for reasoning to move anything, so the absence of an interaction is partly a floor effect, and the interval touching zero cannot exclude a small compensatory benefit at less extreme degradation.</p>
+
+<h2>8 · Reference reliability</h2>
+<p>How much does a noisy reference cap the fine-grained scores in Table 1? We stratify F1 by how strongly three independent report labelers agree on each finding — a rule-based labeler, CheXbert, and VisualCheXbert, the last trained to correct report-versus-image label mismatch.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 18.</b> <span class="cap">F1 stratified by three-labeler agreement. LOW requires a genuine three-way split (~1% of cells) and is correspondingly noisy. Gemini rises with reference reliability on every pre-registered prompt; MedGemma inverts on every one.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>all cells</th><th>HIGH · 3/3</th><th>MED · 2/3</th><th>LOW · split</th></tr></thead>
+<tbody>
+<tr class="grp g"><td colspan="5">Gemini — clean HIGH &gt; MED &gt; LOW</td></tr>
+<tr><td class="lbl">direct</td><td>0.323</td><td class="up">0.372</td><td>0.284</td><td>0.069</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.356</td><td class="up">0.399</td><td>0.318</td><td>0.100</td></tr>
+<tr><td class="lbl">differential</td><td>0.330</td><td class="up">0.364</td><td>0.303</td><td>0.133</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.391</td><td class="up">0.437</td><td>0.346</td><td>0.100</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.384</td><td class="up">0.417</td><td>0.352</td><td>0.191</td></tr>
+<tr><td class="lbl">evidence-structured</td><td>0.428</td><td>0.370</td><td>0.562</td><td>0.273</td></tr>
+<tr class="grp m"><td colspan="5">MedGemma — inverted: the over-calling signature</td></tr>
+<tr><td class="lbl">direct</td><td>0.310</td><td class="dn">0.267</td><td>0.430</td><td>0.298</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.302</td><td class="dn">0.283</td><td>0.353</td><td>0.298</td></tr>
+<tr><td class="lbl">differential</td><td>0.311</td><td class="dn">0.218</td><td>0.596</td><td>0.711</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.299</td><td class="dn">0.277</td><td>0.361</td><td>0.273</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.306</td><td class="dn">0.266</td><td>0.434</td><td>0.273</td></tr>
+</tbody></table></div>
+<p>On the ~90% of cells where all three labelers agree, evidence-first reaches F1 0.437 against 0.391 blended — so part of the modest headline is reference noise. MedGemma is <em>worse</em> where the reference is confident, manufacturing false positives precisely where all three labelers agree the finding is absent: an independent confirmation of the over-calling diagnosed in §4, arrived at without using any model-side metric.</p>
+<h2>9 · Opening the model — where does recognition fail?</h2>
+<p>Sections 5 to 7 narrow the cause of error by elimination. Error is overwhelmingly perceptual (§5); it does not yield to more pixels, more regions, or a correct pointer (§6); the image nonetheless supplies essentially all performance (§6.5); and reasoning cannot compensate for degrading it (§7). What survives is a recognition limitation. But "recognition" here is a residue — the name for what is left once information and attention have been ruled out — and every measurement behind it was taken at the model's output. None of them says <em>where inside the model</em> the finding stops being available.</p>
+<p>That question is answerable for one of our two models. MedGemma runs locally, so its vision pathway can be read directly rather than inferred from what it says. The design, controls and predictions below were fixed before any result was seen, and all four controls have now run.</p>
+
+<h3>9.1 Design — three probe sites along the pathway</h3>
+<p>Every test study is passed through the vision pathway with no text generation at all, and its representation recorded at three points. At each, a deliberately simple classifier — logistic regression, one per finding — asks a single question: <em>is this finding linearly recoverable here?</em> The probe is not meant to be a better detector. Its weakness is the point: anything a linear readout can extract is unambiguously present in the representation.</p>
+
+<figure>
+<div class="path">
+  <div class="pnode"><span class="pk">image</span><span class="pd">chest radiograph, 896 × 896</span></div>
+  <div class="parrow" aria-hidden="true"></div>
+  <div class="pnode probe"><span class="pk">pixels <em>control</em></span><span class="pd">32 × 32 grayscale · 1 024 dims</span></div>
+  <div class="parrow" aria-hidden="true"></div>
+  <div class="pnode probe"><span class="pk">encoder layers 0 – 27</span><span class="pd">SigLIP-400M · 4 096 patches × 1 152 · pooled to 2 304 dims per layer</span></div>
+  <div class="parrow" aria-hidden="true"></div>
+  <div class="pnode probe key"><span class="pk">projector output</span><span class="pd">256 tokens × 2 560 — the vectors spliced into the language model's input</span></div>
+  <div class="parrow" aria-hidden="true"></div>
+  <div class="pnode"><span class="pk">language model</span><span class="pd">already measured: Stage A, §5</span></div>
+</div>
+<div style="font-family:var(--sans);font-size:12.5px;color:var(--muted);padding-top:14px;line-height:1.5;">
+<b>Figure 2.</b> The probed pathway. Shaded nodes carry a linear probe; the emphasised node is the vision–language interface. Encoder tokens are reduced by mean-pooling concatenated with max-pooling — mean alone averages a focal finding across 4 096 patches, and a small effusion occupies a handful of them.</div>
+</figure>
+
+<p>The third site is what makes this more than a feature-quality audit. Those 256 vectors are not an intermediate the language model might consult; they are literally what it is given in place of the image. A probe that reads a finding there has established that the information arrived. Whether the model then uses it is a separate question, and one the paper has already measured.</p>
+
+<h3>9.2 Two outcomes, both informative</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table 19.</b> <span class="cap">Pre-registered readings. The comparison is made at the vision–language interface, against MedGemma's own perception pass on the same studies.</span></caption>
+<thead><tr><th class="lbl">result</th><th class="lbl">what it establishes</th><th class="lbl">where the bottleneck sits</th></tr></thead>
+<tbody>
+<tr><td class="lbl"><b>A</b> · probe succeeds, model fails</td><td class="lbl">the information reaches the language model and is not used</td><td class="lbl">readout / vision–language alignment</td></tr>
+<tr><td class="lbl"><b>B</b> · probe fails too</td><td class="lbl">the finding is not linearly present at the interface</td><td class="lbl">visual representation, upstream</td></tr>
+<tr><td class="lbl"><b>A′</b> · present in the encoder, absent after projection</td><td class="lbl">the 4 096 → 256 pooling discards it</td><td class="lbl">the projector specifically</td></tr>
+</tbody></table></div>
+<p>The layer sweep adds a second axis to whichever outcome obtains: whether diagnostic information emerges gradually, appears early and persists, or is present mid-stack and lost by the final layer. A finding recoverable at layer 12 but not at layer 27 is a different failure from one never recoverable at all.</p>
+
+<h3>9.3 The comparison has to be commitment-matched</h3>
+<div class="box warn"><div class="t">The confound this paper exists to catch</div>
+<p>A probe yields a ranking and can be thresholded anywhere; the model has already committed. Reporting "probe AUROC 0.82 against model F1 0.40" would therefore restate the finding of §3–7 — that any lever which raises commitment raises F1 — while appearing to refute it. It would be the single easiest way to draw a spectacular and worthless conclusion from this experiment.</p>
+<p>Each finding's probe is instead thresholded to emit <b>exactly the number of positives the model emitted for that finding</b>, on the same studies. Both sides then receive identical hierarchy propagation and are scored against the same reference under the same conventions used throughout this paper. Equal commitment budget, so a gap is attributable to readout quality rather than to operating point. Threshold-free AUROC is reported alongside, as the ceiling a perfectly calibrated readout would reach.</p></div>
+
+<h3>9.4 Results — the layer curve and the interface</h3>
+<p>Probes were fitted on the 2 520-study training pool, regularisation selected on the 552-study development split, and the locked 754-study test split scored once. The comparator is MedGemma's own perception pass over the same studies: micro-F1 0.3072 at precision 0.267 and recall 0.362, from 1 293 committed finding calls.</p>
+
+<figure>
+<svg viewBox="0 0 760 250" width="100%" role="img" aria-label="Linear-probe AUROC across vision encoder depth, rising from 0.54 at layer 0 to a plateau near 0.78 from layer 12 onward, with the projector output matching the plateau, a raw-pixel control at 0.63, and a label-shuffle control at chance.">
+  <line x1="60" y1="200" x2="700" y2="200" stroke="var(--hair-strong)" stroke-width="1"/>
+  <line x1="60" y1="30" x2="60" y2="200" stroke="var(--hair-strong)" stroke-width="1"/>
+  <text x="52" y="34" text-anchor="end" font-size="10" fill="var(--faint)" font-family="ui-monospace,monospace">0.82</text>
+  <text x="52" y="204" text-anchor="end" font-size="10" fill="var(--faint)" font-family="ui-monospace,monospace">0.45</text>
+  <text x="20" y="118" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="ui-monospace,monospace" transform="rotate(-90 20 118)">AUROC</text>
+  <line x1="60" y1="181.6" x2="700" y2="181.6" stroke="var(--faint)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+  <text x="706" y="185" font-size="10" fill="var(--faint)" font-family="ui-monospace,monospace">shuffle</text>
+  <line x1="60" y1="118.2" x2="700" y2="118.2" stroke="var(--d)" stroke-width="1" stroke-dasharray="5 3" opacity="0.85"/>
+  <text x="706" y="121" font-size="10" fill="var(--d)" font-family="ui-monospace,monospace">pixels</text>
+  <polyline fill="none" stroke="var(--faint)" stroke-width="1.8" points="60,155.4 122,135.7 184,132.0 246,137.1 309,135.2 371,134.3 433,129.2 495,138.4 557,142.6 620,143.9"/>
+  <polyline fill="none" stroke="var(--gem)" stroke-width="1.8" points="60,156.4 122,145.3 184,90.2 246,66.8 309,64.5 371,53.9 433,53.0 495,52.0 557,53.4 620,65.8"/>
+  <polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points="60,157.7 122,122.8 184,93.4 246,63.5 309,54.8 371,52.0 433,47.9 495,46.5 557,45.1 620,49.3"/>
+  <g fill="var(--accent)">
+    <circle cx="60" cy="157.7" r="3.5"/><circle cx="122" cy="122.8" r="3.5"/><circle cx="184" cy="93.4" r="3.5"/>
+    <circle cx="246" cy="63.5" r="3.5"/><circle cx="309" cy="54.8" r="3.5"/><circle cx="371" cy="52.0" r="3.5"/>
+    <circle cx="433" cy="47.9" r="3.5"/><circle cx="495" cy="46.5" r="3.5"/><circle cx="557" cy="45.1" r="3.5"/>
+    <circle cx="620" cy="49.3" r="3.5"/>
+  </g>
+  <line x1="620" y1="47.9" x2="670" y2="47.9" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 2"/>
+  <circle cx="672" cy="47.9" r="5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+  <circle cx="672" cy="50.2" r="3" fill="none" stroke="var(--gem)" stroke-width="1.8"/>
+  <circle cx="672" cy="126.5" r="3" fill="none" stroke="var(--faint)" stroke-width="1.8"/>
+  <text x="672" y="33" text-anchor="middle" font-size="10" fill="var(--accent)" font-family="ui-monospace,monospace" font-weight="700">proj</text>
+  <g font-size="10" fill="var(--muted)" font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="60" y="216">0</text><text x="122" y="216">3</text><text x="184" y="216">6</text>
+    <text x="246" y="216">9</text><text x="309" y="216">12</text><text x="371" y="216">15</text>
+    <text x="433" y="216">18</text><text x="495" y="216">21</text><text x="557" y="216">24</text>
+    <text x="620" y="216">27</text>
+  </g>
+  <text x="340" y="237" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="ui-monospace,monospace">SigLIP encoder layer</text>
+</svg>
+<div class="fig-key" style="padding-top:10px;">
+<span><span class="sw" style="background:var(--accent)"></span>8-bit (the studied model)</span>
+<span><span class="sw" style="background:var(--gem)"></span>4-bit</span>
+<span><span class="sw" style="background:var(--faint)"></span>untrained encoder</span>
+<span><span class="sw" style="background:var(--d)"></span>raw pixels</span>
+</div>
+<div style="font-family:var(--sans);font-size:12.5px;color:var(--muted);padding-top:10px;line-height:1.5;">
+<b>Figure 3.</b> Macro AUROC by probe site, 12 scorable findings, n = 754. In the trained encoder, diagnostic information accumulates through the first third of the stack and plateaus from layer 12; the projector output (open markers at right) matches the plateau rather than falling below it. The untrained encoder of identical architecture and pooling is flat with depth and sits below a 32 x 32 pixel readout, so the curve is a property of training rather than of shape. Quantising to 4 bits barely moves it. The label-shuffle control (not plotted) sits at chance at every site.</div>
+</figure>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 20.</b> <span class="cap">Probe performance by site. Matched-F1 thresholds each finding's probe to the number of positives MedGemma committed for that finding, so both sides spend an identical commitment budget. Misses recovered counts, among the 621 finding-instances the model failed to report, how many the probe places above that threshold.</span></caption>
+<thead><tr><th class="lbl">site</th><th>AUROC</th><th>shuffled</th><th>matched-F1</th><th class="lbl">vs model</th><th>misses recovered</th></tr></thead>
+<tbody>
+<tr><td class="lbl">encoder layer 0</td><td>0.542</td><td>0.510</td><td>0.2277</td><td class="lbl">−0.080</td><td>92 / 621</td></tr>
+<tr><td class="lbl">layer 6</td><td>0.682</td><td>0.493</td><td>0.2917</td><td class="lbl">−0.015</td><td>110 / 621</td></tr>
+<tr><td class="lbl">layer 12</td><td>0.766</td><td>0.456</td><td>0.3641</td><td class="lbl">+0.057</td><td>131 / 621</td></tr>
+<tr><td class="lbl">layer 18</td><td>0.781</td><td>0.493</td><td>0.3604</td><td class="lbl">+0.053</td><td>122 / 621</td></tr>
+<tr><td class="lbl">layer 24</td><td class="hi">0.787</td><td>0.517</td><td>0.3694</td><td class="lbl">+0.062</td><td>126 / 621</td></tr>
+<tr><td class="lbl">layer 27 <em>(final)</em></td><td>0.778</td><td>0.512</td><td>0.3682</td><td class="lbl">+0.061</td><td>127 / 621</td></tr>
+<tr><td class="lbl"><b>projector output</b></td><td>0.781</td><td>0.456</td><td class="hi">0.3698</td><td class="lbl"><b>+0.063</b></td><td class="hi">129 / 621</td></tr>
+<tr><td class="lbl">pixels <em>(control)</em></td><td class="dn">0.628</td><td>0.494</td><td class="dn">0.2719</td><td class="lbl">−0.035</td><td>93 / 621</td></tr>
+<tr class="ref"><td class="lbl">MedGemma Stage A</td><td class="lbl">—</td><td class="lbl">—</td><td>0.3072</td><td class="lbl">— reference —</td><td class="lbl">—</td></tr>
+</tbody></table></div>
+
+<p>The interface gap is <b>+0.0626 on the 13-class task, 95% CI [+0.0411, +0.0839]</b>, and +0.0652 [+0.0425, +0.0878] on reliable-11, by a paired bootstrap that resamples studies rather than cells — the 13 findings within a study are not independent, and this is the same procedure used for every comparison in §6 and §7.</p>
+<p>Three things follow, in descending order of how securely they are established.</p>
+<p><b>The projector does not discard the information.</b> Outcome A′ is ruled out: the interface scores 0.781 against the encoder's peak of 0.787, so the 4 096 → 256 pooling is not where diagnostic content is lost. This was a live hypothesis and it is now a clean negative.</p>
+<p><b>Information is fully formed by layer 12.</b> The curve rises steeply through the first third of the stack and is flat thereafter; the final fifteen blocks add nothing measurable to linear separability.</p>
+<p><b>A fifth of the model's own misses are linearly recoverable</b> from the vectors it was handed — 129 of 621. This is the severity-unconfounded form of the question posed in §9.6: these are cases the model failed on, read off its own input, at its own commitment budget.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 21.</b> <span class="cap">Per-finding AUROC at the vision–language interface, against the raw-pixel control for the same finding. Pneumothorax is unscorable at 7 test positives. The encoder's contribution over pixels is largest for the parenchymal findings and near zero for Enlarged Cardiomediastinum — one of the two classes the report labelers themselves cannot agree on (§8).</span></caption>
+<thead><tr><th class="lbl">finding</th><th>test pos</th><th>proj AUROC</th><th>pixels</th><th class="lbl">encoder gain</th></tr></thead>
+<tbody>
+<tr><td class="lbl">Pleural Effusion</td><td>72</td><td class="hi">0.930</td><td>0.767</td><td class="lbl">+0.164</td></tr>
+<tr><td class="lbl">Cardiomegaly</td><td>161</td><td class="hi">0.910</td><td>0.799</td><td class="lbl">+0.111</td></tr>
+<tr><td class="lbl">Support Devices</td><td>61</td><td>0.854</td><td>0.666</td><td class="lbl">+0.188</td></tr>
+<tr><td class="lbl">Edema</td><td>43</td><td>0.853</td><td>0.759</td><td class="lbl">+0.094</td></tr>
+<tr><td class="lbl">Consolidation</td><td>19</td><td>0.848</td><td>0.491</td><td class="lbl"><b>+0.357</b></td></tr>
+<tr><td class="lbl">Lung Opacity</td><td>297</td><td>0.835</td><td>0.656</td><td class="lbl">+0.179</td></tr>
+<tr><td class="lbl">Atelectasis</td><td>144</td><td>0.819</td><td>0.682</td><td class="lbl">+0.137</td></tr>
+<tr><td class="lbl">Pneumonia</td><td>39</td><td>0.762</td><td>0.520</td><td class="lbl">+0.242</td></tr>
+<tr><td class="lbl">Fracture</td><td>22</td><td class="dn">0.653</td><td>0.602</td><td class="lbl">+0.051</td></tr>
+<tr><td class="lbl">Lung Lesion</td><td>28</td><td class="dn">0.645</td><td>0.557</td><td class="lbl">+0.088</td></tr>
+<tr><td class="lbl">Enlarged Cardiomediastinum</td><td>69</td><td class="dn">0.641</td><td>0.613</td><td class="lbl">+0.029</td></tr>
+<tr><td class="lbl">Pleural Other</td><td>11</td><td class="dn">0.617</td><td>0.430</td><td class="lbl">+0.188</td></tr>
+</tbody></table></div>
+
+<h3>9.5 Controls</h3>
+<p>A successful probe is uninterpretable on its own, because a strong result can arise from the task being linearly easy rather than from the encoder having learned anything. Four controls were specified in advance; all four have run, each through the identical pipeline.</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 22.</b> <span class="cap">Controls at the vision-language interface, each answering a specific alternative explanation for a positive probe result. The studied 8-bit encoder scores AUROC 0.781 and matched-F1 0.3698.</span></caption>
+<thead><tr><th class="lbl">control</th><th class="lbl">alternative it rules out</th><th>AUROC</th><th>matched-F1</th><th class="lbl">verdict</th></tr></thead>
+<tbody>
+<tr><td class="lbl">permuted labels</td><td class="lbl">probe capacity absorbing high-dimensional features</td><td class="dn">0.456</td><td class="lbl">—</td><td class="lbl">excluded — chance at every site</td></tr>
+<tr><td class="lbl">raw pixels</td><td class="lbl">the finding is linearly separable without any encoder</td><td class="dn">0.628</td><td class="dn">0.2719</td><td class="lbl">excluded — 0.15 below the encoder</td></tr>
+<tr><td class="lbl"><b>untrained encoder</b></td><td class="lbl">random features of identical architecture and pooling</td><td class="dn">0.610</td><td class="dn">0.2330</td><td class="lbl"><b>excluded — flat with depth, and below pixels</b></td></tr>
+<tr><td class="lbl"><b>4-bit checkpoint</b></td><td class="lbl">that the probe is unconnected to the model's actual seeing</td><td>0.776</td><td>0.3555</td><td class="lbl"><b>dissociates — representation holds, output falls (Table 23)</b></td></tr>
+</tbody></table></div>
+<p>The shuffle control is a distribution rather than a single draw: permuting each finding's training labels 25 times gives a null band of <b>0.465 [0.359, 0.572]</b>, and <b>11 of 12 findings sit outside it</b>. Only Pleural Other fails, at 11 test positives. Each of the eleven beat every one of its 25 permutations, so their permutation p-values all sit at the 1/26 floor the draw count allows; more permutations would lower them rather than change the verdict. An earlier version of this control permuted once per finding, and its 0.311-to-0.544 scatter was the sampling noise of that single draw.</p>
+<p><b>The untrained encoder is the control that mattered, and it is decisive on two counts.</b> Its interface AUROC is 0.610 against the trained encoder's 0.781 — but the more informative fact is the shape in Figure 3: random features are <em>flat</em> with depth, 0.547 at layer 0 to 0.610 at the interface, where the trained encoder climbs from 0.542 to 0.787. The accumulation is a property of training, not of architecture and pooling. Random features also land <em>below</em> a 32 x 32 grayscale readout (0.610 against 0.628), which removes any residual worry that the pooling is doing the work.</p>
+<p>The pixel control separates the encoder's contribution from the task's intrinsic linear easiness, and the per-finding gap is largest exactly where radiological reading is least trivial (Consolidation +0.357, Pneumonia +0.242). It also delivers a less comfortable number: a logistic regression on that thumbnail reaches matched-F1 0.2719 against the model's own 0.3072. That is not a statement about probes.</p>
+<p>The 4-bit arm was intended as a test of the instrument, and it has become the section's central result. It is the only comparison here in which no supervision asymmetry can be raised: probe is measured against probe, and generation against generation.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 23.</b> <span class="cap">Quantisation dissociates representation from readout. Both columns are the same 754 studies; the generated rows use the identical perception-only prompt, and the probe rows are refitted independently on each checkpoint's features. Paired McNemar on per-study binary correctness.</span></caption>
+<thead><tr><th class="lbl">measured on</th><th>8-bit</th><th>4-bit</th><th class="lbl">change</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl"><b>representation</b> — probe AUROC</td><td>0.781</td><td>0.776</td><td class="lbl">−0.005 &nbsp;(−0.6%)</td></tr>
+<tr class="ref"><td class="lbl"><b>representation</b> — probe matched-F1</td><td>0.3698</td><td>0.3555</td><td class="lbl">−0.014 &nbsp;(−3.9%)</td></tr>
+<tr><td class="lbl"><b>generation</b> — 13-class F1</td><td>0.307</td><td class="dn">0.222</td><td class="lbl">−0.085 &nbsp;(−27.7%)</td></tr>
+<tr><td class="lbl"><b>generation</b> — binary accuracy</td><td>0.6592</td><td class="dn">0.5955</td><td class="lbl"><b>−0.0637 · McNemar p = 0.0037</b></td></tr>
+<tr><td class="lbl"><b>generation</b> — flags abnormal</td><td>48.0%</td><td class="dn">30.5%</td><td class="lbl">−17.5 points</td></tr>
+<tr><td class="lbl"><b>generation</b> — findings per study</td><td>1.75</td><td class="dn">0.91</td><td class="lbl">roughly halved</td></tr>
+</tbody></table></div>
+
+<p>Quantising to 4 bits costs the model's <em>generated</em> reading about six times what it costs the linearly decodable content of its own representation. The information is still there; the ability to report it is not. That is the readout account demonstrated without a trained probe standing in for the model on one side of the comparison, and it is what licenses the stronger reading of outcome A that §9.4 alone could not support.</p>
+<p>One qualification belongs with it. The probe is <em>refitted</em> on 4-bit features, so it can absorb a linear distortion that the model's frozen language head cannot. "Representation intact" therefore means <em>linearly decodable to the same degree</em>, not <em>identical</em>. The claim that survives is the one the experiment was designed for: diagnostic information survives quantisation in accessible form while the model's own readout of it degrades significantly.</p>
+
+<h3>9.6 What the probe recovers from the model's own misses</h3>
+<p>The natural analysis — compare representations of findings the model caught against those it missed, and test whether they separate — is confounded, and would almost certainly return a positive result for the wrong reason. Missed findings are systematically subtler than caught ones, so any separability could simply reflect an encoder that represents severity. The question is therefore asked in a form that does not admit that reading: restricted to the cases the model <em>missed</em>, how many does a commitment-matched probe recover?</p>
+<p><b>129 of 621</b>, at the vision–language interface — a fifth. These are findings the model was asked about, had the visual evidence for in the vectors it received, and did not report; a linear readout spending the same commitment budget recovers them. Severity cannot explain this, because no comparison between easy and hard cases is being made: the probe and the model are scored on the same failures. The count is stable across the plateau (122 to 133 from layer 12 onward) and drops to 92–93 at layer 0 and at raw pixels, so it tracks the same encoded content as Figure 3 rather than a thresholding artifact.</p>
+
+<div class="box warn"><div class="t">What this establishes, and what it does not</div>
+<p><b>Established.</b> Diagnostic information for most findings is linearly present at the point where the language model receives it; the projector is not where it is lost; and that information is genuinely learned rather than an artifact of architecture, pooling or probe capacity. All three alternative explanations specified in advance are excluded — the shuffle sits at chance, a raw-pixel readout is 0.15 AUROC below, and an untrained encoder of identical shape is flat with depth and below even the pixel readout.</p>
+<p><b>Established, with one qualification.</b> That the deficit is in readout rather than representation. The probe-versus-model gap is supervision-confounded and cannot carry this on its own; the quantisation dissociation can, because it compares probe to probe and generation to generation. Its qualification is that the probe refits on each checkpoint, so "representation intact" means linearly decodable to the same degree rather than identical.</p>
+<p><b>Also established.</b> That the failure is at expression rather than attention or mapping (§9.8). The visual signal is flat across the language stack, and two-thirds of the probe-recovered misses survive to the vector generation runs from. Tuning the connector, and the connector plus the early language blocks, both make the model worse rather than better (§9.9) — the prediction that account makes, tested where it could have failed.</p>
+<p><b>Not established.</b> That this generalises. Everything in §9 is one model on one corpus, and the vision pathway of a closed API model cannot be opened at all — the general model in §3–§7 is absent from this section entirely. Nor does any of it license a claim about a <em>circuit</em>: "expression fails" locates a stage, and why a decodable concept does not surface in the output distribution is unanswered.</p>
+<p><b>Outstanding.</b> A second architecture, to separate a property of this model from a property of vision–language models. A finer quantisation ladder — 4-bit and 8-bit are two points, and the shape of the curve between them is unmeasured. And the multiplicity note in §9.7 applies to this section as a whole: the locked split has now been scored many times.</p></div>
+
+<h3>9.7 What a trained readout reaches on the same features</h3>
+<p>The probe was built to answer a mechanistic question, and §9.4 deliberately handicapped it to the model's own commitment budget so the comparison would be fair. Removing that handicap answers a different and more practical question: if the information is present at the interface, how much of the task does a readout of it actually solve? The threshold for each finding is chosen on the development split and applied once to test. No finding is dropped — a class-selection search was rejected elsewhere in this paper as metric gaming (§12) and is not revisited here.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 24.</b> <span class="cap">The full granularity ladder, same 754 studies and same conventions as Table 1. The readout is a per-finding logistic regression on the frozen interface representation. <b>These rows are not comparable to any prompting result in this paper</b> — see the warning below.</span></caption>
+<thead><tr><th class="lbl">system</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>binary acc</th><th>binary F1</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">MedGemma Stage A <em>(zero-shot)</em></td><td>0.3072</td><td>0.3218</td><td>0.5030</td><td>0.6592</td><td>0.6726</td></tr>
+<tr><td class="lbl">readout, matched commitment</td><td>0.3698</td><td class="lbl">—</td><td class="lbl">—</td><td class="lbl">—</td><td class="lbl">—</td></tr>
+<tr><td class="lbl"><b>readout, dev-tuned threshold</b></td><td class="up">0.4706</td><td class="up">0.5144</td><td class="up">0.6290</td><td class="up">0.7745</td><td class="up">0.8023</td></tr>
+</tbody></table></div>
+
+<p>Two refinements were tried and both <em>failed</em>, which is worth recording because each failure is diagnostic.</p>
+<p><b>Prevalence-matched thresholds</b> — emitting the number of positives the development split's base rate predicts, rather than the F1-maximising cutoff — scored 0.4308 against 0.4706. The cause is a property of this study's design rather than of the method: the development split carries a positive-cell rate of 0.0569 while the locked test split carries 0.0993, because the test split was deliberately stratified across difficulty and is therefore enriched. Transferring a <em>rate</em> across those splits under-calls by 43% (557 predicted against 973 true). Rank-based selection transfers between the two; rate-based selection cannot.</p>
+<p><b>Concatenating layer 12, layer 24 and the interface</b> scored 0.4285 against 0.4706 from the interface alone. Macro AUROC barely moved (0.7724 against 0.7700) while F1 fell, so the additional sites contributed variance rather than signal — consistent with §9.4's finding that information is complete by layer 12 and the later sites are largely redundant.</p>
+<p>The gap between the two threshold rules is itself the paper's recurring signature seen from inside the readout: the F1-maximising rule commits 1 249 times and the prevalence rule 558, and micro-F1 rewards the first because calling above prevalence pays on imbalanced classes. The commitment dial of §3 to §7 is not a property of language models. It is a property of the metric.</p>
+
+<div class="box warn"><div class="t">These numbers are not a prompting result</div>
+<p>The readout is <b>supervised</b>: it was fitted on 2 520 labelled studies from the training pool. Every prompt, model and visual-input result in this paper is zero-shot. A readout trained on labels reaching 0.4706 where a zero-shot model reaches 0.3072 is therefore not evidence that better prompting could close that gap, and these rows must never be merged into Table 1 or read as an improvement to the model. What they establish is narrower and still useful: the frozen representation supports roughly half the fine-grained task, so the performance the deployed model does not deliver is not missing from what it was given.</p></div>
+
+<h3>9.8 Inside the language model — which failure is it?</h3>
+<p>Everything above stops at the interface. That localises the loss to "after the projector", which names a stage rather than a mechanism, and three mechanisms remain live. The information may be present but <b>not attended to</b>; it may be attended to but <b>weakly mapped</b> onto clinical concepts; or it may be <b>internally recoverable at the moment of generation and simply not expressed</b>. They call for different interventions, and the interface probe cannot tell them apart, because it never looks inside the language model.</p>
+<p>So we looked. A single forward pass per study — no generation — records the model's own hidden states at seven of its thirty-four text blocks, at two places each: pooled over the 256 image-token positions, and at the <em>final</em> position, which is the vector generation actually runs from. The prompt is byte-identical to the Stage-A run that produced the 621 misses, so these are the states that produced them.</p>
+<p>The decision rule was fixed before looking. If the model's misses remain recoverable at the final position, the concept reaches the decision point and expression fails. If they decay inside the stack, the information is not carried forward and the attention and connector accounts are the live ones.</p>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 25.</b> <span class="cap">Probing the model's own hidden states, n = 754, same splits and conventions as Table 20. The last column is the one that matters: of the 129 findings the interface probe recovered from the model's misses (§9.6), how many remain recoverable at each depth. Layer indices run 0–33 through the text stack; <code>last_final</code> is after the output norm.</span></caption>
+<thead><tr><th class="lbl">site</th><th class="lbl">what it is</th><th>AUROC</th><th>matched-F1</th><th>keeps of the 129</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">proj</td><td class="lbl">interface — vision only, no text</td><td>0.781</td><td>0.3698</td><td class="lbl">— reference —</td></tr>
+<tr><td class="lbl">img_L0</td><td class="lbl">image tokens, first block</td><td>0.780</td><td>0.3666</td><td>106 &nbsp;(82%)</td></tr>
+<tr><td class="lbl">img_L12</td><td class="lbl">image tokens, mid stack</td><td class="hi">0.783</td><td>0.3645</td><td>103 &nbsp;(80%)</td></tr>
+<tr><td class="lbl">img_L33</td><td class="lbl">image tokens, last block</td><td>0.772</td><td>0.3624</td><td>93 &nbsp;(72%)</td></tr>
+<tr><td class="lbl">last_L0</td><td class="lbl">decision position, first block</td><td>0.773</td><td>0.3590</td><td class="hi">100 &nbsp;(78%)</td></tr>
+<tr><td class="lbl">last_L18</td><td class="lbl">decision position, mid stack</td><td>0.761</td><td>0.3518</td><td>89 &nbsp;(69%)</td></tr>
+<tr><td class="lbl"><b>last_final</b></td><td class="lbl"><b>the vector generation runs from</b></td><td>0.768</td><td>0.3528</td><td><b>83 &nbsp;(64%)</b></td></tr>
+<tr><td class="lbl">indication text only</td><td class="lbl">control — no image at all</td><td class="dn">0.574</td><td class="lbl">—</td><td class="lbl">—</td></tr>
+</tbody></table></div>
+
+<p>The curve inside the language model is <em>flat</em>. Whatever the vision encoder built survives the whole text stack essentially undiminished: 0.780 at the first block, 0.772 at the last, against 0.781 at the interface itself. And <b>roughly two-thirds of the findings the interface probe recovered are still linearly decodable from the exact vector the model generates from</b> — and the model does not say them.</p>
+
+<div class="box"><div class="t">The answer, on the pre-set rule</div>
+<p>The concept reaches the decision point. Expression fails. Neither the attention account nor the weak-mapping account survives: the image-token curve is flat from the first block to the last, so the model is attending to and carrying the visual content perfectly well, and a linear readout of its own final state recovers findings its output omits.</p>
+<p>This redirects the obvious remedies. Tuning the connector, or selectively adjusting the attention heads that process image tokens, would both act <em>upstream</em> of where this experiment locates the failure. What the result points at instead is the step from an internal state to an emitted token — decoding, output calibration, or a readout head consuming the final state directly, which §9.7 shows already reaches 0.5061.</p></div>
+
+<p>One confound deserves its own sentence, because the final position sees the prompt as well as the picture, and the prompt carries the clinical indication. Fitting the same probes on the indication string alone gives macro AUROC <b>0.574</b> — real, and worth stating. But the language-model sites <em>match</em> rather than exceed the vision-only interface at 0.781; were text driving them they would exceed it. The visual signal dominates, and the indication contributes a modest amount on top.</p>
+<p>A limit of the same kind bounds the conclusion. "Expression fails" names a stage, not a circuit. Why a linearly decodable concept does not surface in the output distribution is the next question, and nothing here answers it.</p>
+
+<h3>9.9 Can the alignment be tuned? A three-arm intervention</h3>
+<p>Everything to this point is observational. If the deficit really is expression rather than extraction, then tuning the parts of the multimodal path that <em>precede</em> expression should not fix it — and that is a prediction which can be tested rather than asserted. Three arms, on the same splits, differing only in how much of the path is allowed to move:</p>
+<div class="tbl-wrap"><table>
+<caption><b>Table 26.</b> <span class="cap">The three arms. Each is trained on the identical <code>perception_only</code> scaffold the baseline itself ran, so the arms, the 621 misses and the 129 recoveries all refer to the same task; the evaluation refuses to run if that parity is broken.</span></caption>
+<thead><tr><th class="lbl">arm</th><th class="lbl">encoder</th><th class="lbl">connector</th><th class="lbl">language model</th><th>trainable</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">baseline</td><td class="lbl">frozen</td><td class="lbl">frozen</td><td class="lbl">frozen</td><td class="lbl">—</td></tr>
+<tr><td class="lbl">connector</td><td class="lbl">frozen</td><td class="lbl"><b>trainable</b></td><td class="lbl">frozen</td><td>2.95 M</td></tr>
+<tr><td class="lbl">both</td><td class="lbl">frozen</td><td class="lbl"><b>trainable</b></td><td class="lbl"><b>LoRA, blocks 0–7</b></td><td>6.46 M</td></tr>
+</tbody></table></div>
+
+<div class="tbl-wrap"><table>
+<caption><b>Table 27.</b> <span class="cap">Outcome, n = 754, same reference and conventions as Table 1. Conversion counts how many of the 129 probe-recovered misses (§9.6) the arm now actually says; the baseline scores zero by construction, which is what makes the metric interpretable without a separate control.</span></caption>
+<thead><tr><th class="lbl">arm</th><th>13-class</th><th>reliable-11</th><th>3-group</th><th>bin acc</th><th>flags abn</th><th class="lbl">conversion</th></tr></thead>
+<tbody>
+<tr class="ref"><td class="lbl">baseline</td><td>0.3072</td><td>0.3218</td><td>0.5030</td><td>0.6592</td><td>48.0%</td><td class="lbl">0 / 129 by construction</td></tr>
+<tr><td class="lbl">connector</td><td class="dn">0.2403</td><td class="dn">0.2510</td><td class="dn">0.3841</td><td class="dn">0.6074</td><td>42.3%</td><td class="lbl">31 / 129 &nbsp;(24.0%)</td></tr>
+<tr><td class="lbl">both</td><td class="dn">0.1055</td><td class="dn">0.1112</td><td class="dn">0.1215</td><td class="dn">0.4695</td><td class="dn">7.8%</td><td class="lbl">7 / 129 &nbsp;(5.4%)</td></tr>
+</tbody></table></div>
+
+<p><b>Both arms make the model worse, and they do so monotonically with intervention depth.</b> Tuning the connector costs 0.067 F1; adding LoRA to the blocks that first ingest visual tokens costs 0.202. The deeper arm collapses into silence — it flags 7.8% of studies abnormal against a 58% true rate, and its binary accuracy of 0.4695 is worse than answering "normal" to everything. Its output is not a single degenerate string (495 distinct of 754, mean 741 characters), but two generations came back as <em>"Rales"</em> and <em>"Shielded, PDP."</em>, so this is damaged generation rather than considered conservatism.</p>
+<p>That is the §9.8 reading surviving a test that could have overturned it. Had either arm converted a meaningful share of the 129 while holding its ladder, the expression account would have been wrong and the extraction account right. Neither did.</p>
+
+<div class="box"><div class="t">The result worth keeping is not the null</div>
+<p>Both arms do convert <em>some</em> latent findings, and whether they convert the <em>right</em> ones is a separate question with a clean answer. Splitting the model's 621 misses by whether the interface probe had recovered them:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th class="lbl">arm</th><th class="lbl">probe had recovered it</th><th class="lbl">probe had not</th><th class="lbl">enrichment</th></tr></thead>
+<tbody>
+<tr><td class="lbl">connector</td><td>31 / 129 = 24.0%</td><td>24 / 492 = 4.9%</td><td class="lbl"><b>4.9×</b>, p = 1×10<sup>−9</sup></td></tr>
+<tr><td class="lbl">both</td><td>7 / 129 = 5.4%</td><td>5 / 492 = 1.0%</td><td class="lbl"><b>5.3×</b>, p = 4.5×10<sup>−3</sup></td></tr>
+</tbody></table></div>
+<p>Nearly identical enrichment at very different absolute levels. <b>Linear recoverability at the interface predicts which of a model's misses an intervention can turn into speech</b> — and it does so independently of whether that intervention helps overall. The probe is not only a diagnostic of where information sits; it is a prospective marker of what is addressable. That holds even though both arms failed, and it is the part of this section most likely to transfer to another model.</p></div>
+
+<p>Two honest limits. The arms are single runs at one learning rate and one iteration count, with no validation set to select a stopping point — the deeper arm's training loss fell to ~10<sup>−5</sup>, which is memorisation of the target format rather than learning, and a gentler schedule might behave differently. And a null cannot distinguish "this intervention cannot work" from "this intervention was not tuned well enough"; what it does establish is that the obvious, well-motivated version of it does not work here.</p>
+
+<h2>10 · Discussion</h2>
+<p>Four levers, examined independently, converge on one behaviour. <b>Prompt format</b> changes faithfulness and calibration — most sharply, chain-of-thought reads better while being less grounded — and a structured edit raised F1 in both models while improving only one of them. <b>Model choice</b> changes the operating point: the local medical model and the large general one trade sensitivity for precision rather than one dominating. <b>Visual input</b> changes how much the model commits and nothing else: more pixels, more regions, and a correct pointer all raise findings reported without improving the diagnosis. <b>Reasoning effort</b> does the same in the opposite direction, lowering the flag rate and with it accuracy, without compensating for degraded vision (§7).</p>
+<p>Stated as one finding: every lever we tested moves the model along its precision–recall curve rather than moving the curve itself. Micro-F1 rewards travel along that curve, which is why each lever can look like an improvement and why the check that catches it — decomposing into precision, recall and accuracy — has to be applied every time.</p>
+<p>The degradation ladder shows this is a genuinely bidirectional dial rather than a ceiling effect. Adding visual information raises commitment and lowers precision; removing it lowers commitment and raises precision, with recall collapsing. At the extreme the model reports nothing at all rather than falling back on priors — its blank-image accuracy is exactly the normal base rate. That matters for interpreting the other experiments: the over-calling they document is driven by image content, not by the indication text or the prompt leaking a prior.</p>
+<p>It also constrains how strongly the resolution result can be stated. The dose-response alone suggested insensitivity, but blur at a scale equivalent to roughly 128 pixels does significant damage where 256 pixels did not. The system therefore saturates, with an unusually low knee. Both halves matter: everything above the knee is wasted payload, and everything the model achieves still depends almost entirely on the image.</p>
+<p>The decomposition in §5 explains why the third lever behaves this way. Error is overwhelmingly perceptual, and §6 shows that perceptual share is not recoverable by supplying more or better-targeted visual input. The wrong-crop control sharpens this further. A system whose failures were attentional should improve when attention is supplied and suffer when it is misdirected; this one does neither, and a deliberately incorrect crop performs as well as a correct one. The crop functions as a commitment nudge rather than as spatial information. What remains consistent with every condition and the dose-response is a recognition limitation — the model does not identify the finding, and does not make use of a pointer telling it where the finding is. That is a claim about which explanations survive, not a located cause: every experiment above measures the model from the outside, and "recognition" names the residue left when information and attention have been excluded. §9 opens the model to ask where in it the information is lost.</p>
+<p>Two practical corollaries follow. First, prompt tuning does not transfer across models: MedGemma's least conservative prompts maximise its F1 while Gemini's evidence-oriented ones maximise precision, so a prompt validated on one model is not evidence about another. Second, if perception is insensitive to resolution across a 2.7-fold payload range and actively worse at the top of it, the substantial token cost of high-resolution medical inference is buying nothing on this task; effort is better spent on the recognition capability itself — domain-adapted training, better-grounded supervision — than on the image pipeline.</p>
+
+<h2>11 · Limitations</h2>
+<ol>
+<li><b>Report-derived reference.</b> Ground truth is what was dictated, not what is visible; two labelers agree at only F1 0.771, an upper bound on any score computed this way. Some counted false positives are likely visible-but-unreported findings.</li>
+<li><b>Asymmetric evaluators.</b> The large model emits JSON, so groundedness and the blind judge apply to it; the 4B model runs free-text, so the cross-model comparison rests on accuracy and calibration alone.</li>
+<li><b>Uninformative confidence in both models</b> limits the calibration analysis to detecting overconfidence rather than characterising it.</li>
+<li><b>Nulls are not equivalence.</b> The three visual-condition intervals bound plausible effects to roughly ±0.02 F1 and the dose-response comparison to about ±0.03 at n = 250; they do not prove no effect exists.</li>
+<li><b>The knee is indicative, not measured.</b> Gaussian blur radius maps only approximately onto a pixel-equivalent resolution, so bounding the saturation point between roughly 128 and 256 pixel-equivalents is an inference from two different manipulations rather than a direct measurement. Locating it properly would need a sweep in that range.</li>
+<li><b>The visual ablation is single-model.</b> The two-stage result replicated across two very different models; the four visual conditions did not. Nothing here establishes that the recognition limit generalises.</li>
+<li><b>The oracle is coarse</b> — a sixth of the image derived from report text, not a radiologist's bounding box, covering 29.7% of studies. Condition C tested decomposition at 1.35× payload rather than high-resolution regions, because the API compresses per-image budget. Condition D's payload asymmetry is handled by the difference-in-differences but not eliminated.</li>
+<li><b>Two models, one dataset.</b> Generalisation is untested, and the structured-prompt result of §3.3 still wants a held-out confirmation before being reported as established.</li>
+<li><b>The locus is established for one model, on one corpus.</b> Sections 5–7 exclude visual information, spatial attention and reasoning effort; §9 places the information at the vision–language interface and shows quantisation costs the readout roughly six times what it costs the representation. That argument runs entirely within MedGemma-4B on IU X-Ray. The general model's vision pathway is closed and cannot be probed at all, so nothing here establishes that the same locus holds for vision–language models in general, or for a second radiographic corpus.</li>
+<li><b>Linear probes bound from below.</b> A finding a linear probe cannot recover may still be present non-linearly, so a negative probe result constrains linear accessibility rather than presence. Pooling compounds this: mean and max over patch tokens discard spatial arrangement that a readout could in principle use.</li>
+<li><b>Comparative, not clinical.</b> Nothing here supports a claim about clinical readiness.</li>
+</ol>
+
+<h2>12 · Evaluation integrity and corrections</h2>
+<p>The measurement discipline is part of the result. During analysis we audited the scoring code and fixed defects in the <em>evaluation</em>, not the models — most consequentially ignoring the CheXpert label hierarchy, which accounted for 26% of all false positives, and failing to scope negation, so that "no pneumonia" scored as pneumonia. Correcting these roughly doubled the fine-grained numbers; the negation fix lowered some scores and was kept because it is correct. The LLM judge had silently failed at 1.3% coverage; it was traced, fixed and re-run to completion.</p>
+<p>Two episodes from the visual experiments are worth recording because each would have produced a confidently wrong paper.</p>
+<p><b>A manipulation that silently failed.</b> The first high-resolution pilot passed its gate on a rise in <em>mean</em> prompt tokens. Per-study inspection showed 22 of 24 studies were byte-different on disk yet token-identical at the API; the mean had risen on two outliers. The gate was rewritten to require that at least 90% of studies individually receive more payload. Under the original gate the experiment would have reported a null for a manipulation that never reached the model in 88% of cases.</p>
+<p><b>A correction to previously circulated figures.</b> An earlier draft tabulated a McNemar p-value of 0.276 for the high-resolution condition and significance tests for the multi-crop condition that had not in fact been computed. The verified values appear in Tables 8 and 9: p = 0.207 raw and 0.310 corrected for high resolution, and p = 1.000 for multi-crop. The substantive conclusion is unchanged — neither is significant either way — but the figures were wrong and are corrected here.</p>
+<p><b>A retracted interpretation.</b> An earlier draft reported that misdirected spatial guidance significantly harms accuracy while correct guidance does not help, on the strength of a difference-in-differences. A dedicated wrong-crop control (§6.3) showed the two subgroups being differenced also differ in abnormality base rate, 0.795 against 0.462, which is by itself sufficient to produce the effect; on matched studies a wrong crop is indistinguishable from a correct one. The interpretation is withdrawn in §6.3 rather than quietly amended. The difference-in-differences was a defensible response to a confounded design, and only a properly matched control could expose it — which is the argument for running controls whose result you do not expect to need.</p>
+<p>We also record shortcuts to a higher headline that were rejected rather than reported: a class-selection search that reached a higher F1 by retaining a single finding; the over-calling structured prompt of §3.3, credited only for the model where decomposition showed a genuine gain; and four resolution rungs dropped on discovering they were the same dose. Other decisions made for validity over convenience: pre-rendering every arm's images so all conditions share a transmission path; holding the media-resolution setting constant so pixel count is not confounded with server-side tiling; giving every study exactly one crop in Condition D so crop presence cannot signal abnormality; and replacing a skewed convenience subset with a seeded stratified one.</p>
+
+<h2>13 · Reproducibility</h2>
+<p>All figures regenerate from the analysis scripts on the public IU X-Ray split. Image variants are pre-rendered and manifested with per-part dimensions and SHA-256 digests; every prediction row carries the image-part count and the API-reported prompt-token count, so the delivered payload behind any number here can be audited after the fact. Prompts, per-case outputs and the locked split are versioned alongside the pre-registered protocol. Degradations are applied to the rendered baseline bytes, so a degraded arm differs from baseline in exactly one respect. MedGemma runs entirely locally; Gemini via API.</p>
+
+<h2>Appendix A · Prompts, verbatim</h2>
+<p>Every prompt exactly as executed. Each user message is prepended with <code>Indication: {…}</code>. JSON schema tails ("Return JSON with keys …") are omitted here for readability but form part of each Gemini prompt. The 13 findings referenced below are the CheXpert classes: Enlarged Cardiomediastinum, Cardiomegaly, Lung Opacity, Lung Lesion, Edema, Consolidation, Pneumonia, Atelectasis, Pneumothorax, Pleural Effusion, Pleural Other, Fracture, Support Devices.</p>
+
+<h3>A.1 Shared system preamble (Gemini, JSON)</h3>
+<div class="box"><p style="font-family:var(--serif)">You are assisting with a research study on chest radiograph interpretation. You are shown one or more chest X-ray images and (optionally) a short clinical indication. Report only what is supported by the image. If a finding is not visible or is ambiguous, say so. Do not invent measurements, priors, or clinical history. Confidence is an integer 0-100 where: 90-100 = near-certain, 70-89 = probable, 50-69 = favored but uncertain, 30-49 = possible, 0-29 = unlikely/absent. Return ONLY valid JSON matching the requested fields.</p></div>
+
+<h3>A.2 The five pre-registered prompts</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table A1.</b> <span class="cap">The five reasoning scaffolds. Only this text differs between conditions in §3.</span></caption>
+<thead><tr><th class="lbl" style="width:22%">prompt</th><th class="lbl">user message</th></tr></thead>
+<tbody>
+<tr><td class="lbl">direct</td><td class="lbl">Give your single most likely primary diagnosis (or "No acute cardiopulmonary finding"), a one-sentence explanation, and your confidence (0-100).</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td class="lbl">Think step by step about the visible anatomy (lungs, pleura, heart/mediastinum, bones, devices) BEFORE concluding. Then give the primary diagnosis, explanation, and confidence (0-100). Put the step-by-step reasoning in "reasoning".</td></tr>
+<tr><td class="lbl">differential</td><td class="lbl">Produce a ranked differential of up to 5 diagnoses. For each: name, brief supporting rationale from the image, and a probability (0-100). Probabilities need not sum to 100. Then state the single most likely primary diagnosis and overall confidence.</td></tr>
+<tr><td class="lbl">evidence-first</td><td class="lbl">STEP 1 — EVIDENCE: List every discrete visual finding you can actually see, each as {finding, location, presence: present/absent/uncertain}. Include pertinent negatives. STEP 2 — DIAGNOSIS: Using ONLY the evidence in Step 1, state the primary diagnosis, an explanation that references specific Step-1 items, and confidence.</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td class="lbl">STEP 1 — UNCERTAINTY: State image-quality limits and which regions are ambiguous or non-diagnostic. Decide whether a confident read is possible. STEP 2 — DIAGNOSIS: Give primary diagnosis (or explicit "indeterminate / insufficient evidence"), explanation, and a calibrated confidence (0-100) that reflects Step 1. Abstention is allowed and encouraged when warranted.</td></tr>
+</tbody></table></div>
+
+<h3>A.3 Structured and two-stage prompts</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table A2.</b> <span class="cap">The §3.3 structured variant and the two calls used for the perception/reasoning decomposition in §5–6.</span></caption>
+<thead><tr><th class="lbl" style="width:22%">prompt</th><th class="lbl">user message</th></tr></thead>
+<tbody>
+<tr><td class="lbl">evidence-structured</td><td class="lbl">1. IMAGE QUALITY — projection, rotation, inspiration, exposure. 2. VISUAL FINDINGS — review cardiomediastinal silhouette, lungs, pleura, bones, and devices, and for EACH record a status of PRESENT / ABSENT / UNCERTAIN with laterality, location, and the visual evidence: [13 findings]. 3. INTEGRATE the findings marked PRESENT. 4. IMPRESSION — at most 3 abnormalities, taken only from step 2. 5. CONFIDENCE.</td></tr>
+<tr><td class="lbl">perception_only<br><span style="color:var(--muted);font-weight:400">Stage A</span></td><td class="lbl">Examine this chest radiograph systematically. For EACH of the following findings, decide present / absent / uncertain, with the specific visual evidence: [13 findings]. Do NOT state an overall diagnosis, impression, or interpretation. Report ONLY the individual findings — a later, separate step will reason from them. <em>(primary_diagnosis is forced to the literal string "DEFERRED".)</em></td></tr>
+<tr><td class="lbl">diagnose_from_findings<br><span style="color:var(--muted);font-weight:400">Stage B · no image</span></td><td class="lbl"><b>system:</b> You are a radiologist reasoning from a colleague's documented findings. You do NOT have access to the original image — reason ONLY from the findings listed below.<br><b>user:</b> The following findings were documented from systematic review of a chest radiograph: [serialized Stage-A findings]. Based ONLY on these findings — do not assume anything not listed — state the primary diagnosis (or "No acute cardiopulmonary finding" if all findings are absent), a one-sentence explanation citing the specific findings that support it, and your confidence.</td></tr>
+<tr><td class="lbl">crop caption<br><span style="color:var(--muted);font-weight:400">§6 conditions C and D</span></td><td class="lbl">Emitted as a text part after each crop image: "^ {Side} {band} zone (patient {side}), higher resolution." Identical in format across both conditions.</td></tr>
+</tbody></table></div>
+
+<h3>A.4 Free-text prompts (MedGemma)</h3>
+<p>MedGemma-4B's perception collapses under strict JSON demands, so it runs in free text. A shared region scan is layered into every condition — this was the fix for the 4B model defaulting to "normal" on the more permissive scaffolds.</p>
+<div class="box"><p style="font-family:var(--serif)"><b>system:</b> You are a radiologist reading a chest X-ray. Report findings by their standard radiology names (e.g. cardiomegaly, pleural effusion, atelectasis, consolidation, pulmonary edema, pneumothorax, lung opacity, fracture, support device). Report only what the image supports.</p>
+<p style="font-family:var(--serif)"><b>region scan, inserted into every condition:</b> Examine each region in turn — heart and mediastinum, both lungs, pleura and costophrenic angles, bones, and any devices — and name each abnormality you can see.</p></div>
+<p>Each condition then adds its own scaffold: <em>direct</em> — "[scan] Then give your single most likely primary diagnosis."; <em>chain-of-thought</em> — "Reason step by step: for each region, state what you observe and whether it is normal or abnormal … Then give your overall impression and the primary diagnosis."; <em>differential</em> — "[scan] Then list a ranked differential …"; <em>evidence-first</em> — "STEP 1 — list every visual finding you can see, region by region … STEP 2 — using only that evidence, name the abnormal findings and the primary diagnosis."; <em>uncertainty-first</em> — "[scan] For each abnormality, say whether you are confident or it is equivocal. Then give a calibrated primary diagnosis, naming every finding you do see even if mild."</p>
+
+<h2>Appendix B · Supplementary tables</h2>
+
+<h3>B.1 Calibration</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table B1.</b> <span class="cap">Calibration by prompt (Gemini). Every prompt is badly overconfident; uncertainty-first is least so, which is the evidence for H2.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>ECE</th><th>mean confidence</th><th>overconfidence gap</th></tr></thead>
+<tbody>
+<tr><td class="lbl">direct</td><td>0.694</td><td>0.887</td><td>+0.694</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.710</td><td>0.920</td><td>+0.710</td></tr>
+<tr><td class="lbl">differential</td><td>0.653</td><td>0.873</td><td>+0.653</td></tr>
+<tr><td class="lbl">evidence-first</td><td>0.681</td><td>0.913</td><td>+0.681</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td class="up">0.641</td><td class="up">0.870</td><td class="up">+0.641</td></tr>
+</tbody></table></div>
+<p>MedGemma's log-probability confidence is equally uninformative by a different route: mean confidence 85.0 on correct cases against 85.1 on incorrect ones. Sequence log-probability tracks fluency, not correctness.</p>
+
+<h3>B.2 Per-prompt operating points, both models</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table B2.</b> <span class="cap">The full decomposition behind the summary ranges in Table 4. Every prompt for both models, binary triage, n = 754.</span></caption>
+<thead><tr><th class="lbl">prompt</th><th>find/study</th><th>flags abn</th><th>precision</th><th>recall</th><th>accuracy</th></tr></thead>
+<tbody>
+<tr class="grp g"><td colspan="6">Gemini — conservative, precise</td></tr>
+<tr><td class="lbl">direct</td><td>0.54</td><td>25%</td><td>0.896</td><td>0.407</td><td>0.641</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>0.78</td><td>29%</td><td>0.876</td><td>0.452</td><td>0.656</td></tr>
+<tr><td class="lbl">differential</td><td>0.58</td><td>32%</td><td>0.857</td><td>0.494</td><td>0.670</td></tr>
+<tr><td class="lbl">evidence-first</td><td>1.00</td><td>27%</td><td>0.893</td><td>0.435</td><td>0.654</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>0.85</td><td>30%</td><td>0.897</td><td>0.475</td><td class="up">0.675</td></tr>
+<tr class="grp m"><td colspan="6">MedGemma — sensitive, over-calls</td></tr>
+<tr><td class="lbl">direct</td><td>2.42</td><td>68%</td><td>0.676</td><td>0.823</td><td>0.679</td></tr>
+<tr><td class="lbl">chain-of-thought</td><td>2.03</td><td>51%</td><td>0.742</td><td>0.671</td><td class="up">0.684</td></tr>
+<tr><td class="lbl">differential</td><td>4.45</td><td>88%</td><td>0.592</td><td class="up">0.931</td><td>0.601</td></tr>
+<tr><td class="lbl">evidence-first</td><td>1.96</td><td>55%</td><td>0.619</td><td>0.610</td><td>0.570</td></tr>
+<tr><td class="lbl">uncertainty-first</td><td>2.80</td><td>76%</td><td>0.608</td><td>0.823</td><td>0.603</td></tr>
+</tbody></table></div>
+
+<h3>B.3 Pre-registered hypothesis outcomes in full</h3>
+<div class="hyp">
+<span class="id">H1</span><span>Evidence-first improves groundedness.</span><span class="v no">refuted as stated</span>
+<p class="why">Direct has the highest claim support rate (0.850 vs 0.821). But it earns that by barely committing: evidence-first surfaces 4.6 claims per case against direct's 2.0 — 2.25× more — while holding 0.821 support and a low contradiction rate of 0.075. "More evidence surfaced at near-equal fidelity" is the defensible reading; the hypothesis as worded is not supported.</p>
+<span class="id">H2</span><span>Uncertainty-first reduces overconfidence.</span><span class="v yes">supported</span>
+<p class="why">Lowest ECE (0.641), lowest mean confidence (0.870), smallest overconfidence gap — see Table B1. All prompts nonetheless remain badly overconfident, with gaps of +0.63 to +0.71, so the effect is relative rather than a fix.</p>
+<span class="id">H3</span><span>Chain-of-thought and differential look more convincing without being more faithful.</span><span class="v yes">supported</span>
+<p class="why">Chain-of-thought: coherence +0.248, faithfulness −0.229, both p&lt;0.0001 (Figure 1). Faithfulness actively declined rather than merely flattening, which is stronger than the hypothesis predicted. Corroborated by two unrelated instruments: an independent rule-based claim adjudicator agrees in direction for every prompt, and contradiction rates rise (0.115/0.116 for chain-of-thought and differential against 0.066 for direct). Differential and uncertainty-first do not dissociate — they fall on both axes.</p>
+<span class="id">H4</span><span>Prompt effects are larger on ambiguous cases.</span><span class="v yes">supported</span>
+<p class="why">Prompt-effect spread is largest on the rare (0.193) and hard-multi (0.158) strata and smallest on easy-abnormal (0.046).</p>
+</div>
+
+<h3>B.4 Experiment index</h3>
+<div class="tbl-wrap"><table>
+<caption><b>Table B3.</b> <span class="cap">Every experiment reported in this paper, with its scope and the section carrying its result. All share the same locked test split and scoring conventions.</span></caption>
+<thead><tr><th class="lbl">experiment</th><th class="lbl">manipulation</th><th>n</th><th class="lbl">outcome</th><th class="lbl">§</th></tr></thead>
+<tbody>
+<tr><td class="lbl">Prompt format</td><td class="lbl">5 reasoning scaffolds × 2 models</td><td>754</td><td class="lbl">changes faithfulness and calibration; H1 refuted, H2–H4 supported</td><td class="lbl">3</td></tr>
+<tr><td class="lbl">Structured follow-up</td><td class="lbl">machine-readable finding table</td><td>754</td><td class="lbl">F1 illusion in one model, genuine gain in the other</td><td class="lbl">3.3</td></tr>
+<tr><td class="lbl">Model comparison</td><td class="lbl">general API vs local medical</td><td>754</td><td class="lbl">opposite operating points; no clean winner</td><td class="lbl">4</td></tr>
+<tr><td class="lbl">Two-stage decomposition</td><td class="lbl">perception and reasoning as separate calls</td><td>754</td><td class="lbl">77% / 93% of error is perceptual</td><td class="lbl">5</td></tr>
+<tr class="sec-b"><td class="lbl">Exp 1 · resolution</td><td class="lbl">1024 → 2048 px</td><td>754</td><td class="lbl">null on accuracy; more findings reported</td><td class="lbl">6.1</td></tr>
+<tr class="sec-c"><td class="lbl">Exp 1 · multi-crop</td><td class="lbl">full view + 6 clinical zones</td><td>754</td><td class="lbl">null on accuracy; more findings reported</td><td class="lbl">6.1</td></tr>
+<tr class="sec-d"><td class="lbl">Exp 1 · oracle</td><td class="lbl">full view + the true finding zone</td><td>754</td><td class="lbl">no accuracy gain; the initial DiD reading is retracted</td><td class="lbl">6.3</td></tr>
+<tr class="sec-d"><td class="lbl">Exp 4 · wrong-crop control</td><td class="lbl">deliberately incorrect zone, matched studies</td><td>224</td><td class="lbl">wrong crop indistinguishable from correct; the crop is a commitment nudge only</td><td class="lbl">6.3</td></tr>
+<tr><td class="lbl">Exp 2 · dose-response</td><td class="lbl">256 / 512 / 1024 / 2048 px</td><td>250</td><td class="lbl">flat down to 256 px; 2048 px significantly worse</td><td class="lbl">6.4</td></tr>
+<tr><td class="lbl">Exp 5 · reasoning × vision</td><td class="lbl">2 × 2: intact/degraded × direct/elaborated</td><td>250</td><td class="lbl">vision dominates ~6×; reasoning hurts; no interaction</td><td class="lbl">7</td></tr>
+<tr><td class="lbl">Exp 6 · representation probe</td><td class="lbl">linear probes at pixels, 10 encoder depths, and the vision–language interface; 4 controls</td><td class="lbl">754</td><td class="lbl">information linearly present and learned; projector not the loss point; readout gap +0.063 [+0.041, +0.084]</td><td class="lbl">9</td></tr>
+<tr><td class="lbl">Exp 6d · alignment intervention</td><td class="lbl">3 arms: frozen / trainable connector / + LoRA on blocks 0–7</td><td class="lbl">754</td><td class="lbl">both arms worse, monotonically with depth; probe-recoverability predicts convertibility (4.9× and 5.3×)</td><td class="lbl">9.9</td></tr>
+<tr><td class="lbl">Exp 6c · probing inside the LLM</td><td class="lbl">hidden states at 7 of 34 text blocks, image-token and decision positions</td><td class="lbl">754</td><td class="lbl">signal flat across the stack; 64% of recovered misses survive to the generation vector — expression fails, not attention or mapping</td><td class="lbl">9.8</td></tr>
+<tr><td class="lbl">Exp 6b · quantisation dissociation</td><td class="lbl">4-bit vs 8-bit, same prompt, probe and generation both remeasured</td><td class="lbl">754</td><td class="lbl">representation −0.005 AUROC while generation −0.064 binary accuracy (p = 0.004): the deficit is readout, not representation</td><td class="lbl">9.5</td></tr>
+<tr><td class="lbl">Exp 3 · degradation</td><td class="lbl">blur, scramble, blank floor</td><td>250</td><td class="lbl">image worth +0.418 F1 over priors; knee below 256 px</td><td class="lbl">6.5</td></tr>
+</tbody></table></div>
+
+<p class="foot">
+Working draft · gemini-2.5-flash (API) + MedGemma-4B-8bit (local) · IU X-Ray test split, n = 754, with a stratified n = 250 subset for the dose-response · CheXbert reference · hierarchy-aware scoring, uncertain = positive · all comparisons paired at the case level. Comparative claims about prompt, model and visual-input choice; not a statement of clinical readiness.
+</p>
+
+</div>
+
+
+</body></html>

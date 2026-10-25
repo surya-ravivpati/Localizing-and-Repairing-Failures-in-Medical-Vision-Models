@@ -1,0 +1,339 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>The perception–reasoning split — Radiology VLM working paper</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f4f3ef; --surface: #ffffff; --surface-2: #faf9f6;
+    --ink: #191c20; --muted: #5b6570; --faint: #8b95a1;
+    --hair: #dcdfe3; --hair-strong: #c4c9cf;
+    --accent: #0f766e;        /* diagnostic teal */
+    --warn: #b45309;          /* over-call / illusion amber */
+    --warn-bg: #fbf1e4;
+    --good: #15803d;          /* genuine gain green */
+    --good-bg: #eaf4ec;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1013; --surface: #15191e; --surface-2: #12161b;
+      --ink: #e7ebef; --muted: #9aa4b0; --faint: #6c7783;
+      --hair: #262c33; --hair-strong: #333b44;
+      --accent: #2dd4bf; --warn: #f59e0b; --warn-bg: #241b0e;
+      --good: #4ade80; --good-bg: #10231a;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f3ef; --surface: #ffffff; --surface-2: #faf9f6;
+    --ink: #191c20; --muted: #5b6570; --faint: #8b95a1;
+    --hair: #dcdfe3; --hair-strong: #c4c9cf;
+    --accent: #0f766e; --warn: #b45309; --warn-bg: #fbf1e4;
+    --good: #15803d; --good-bg: #eaf4ec;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1013; --surface: #15191e; --surface-2: #12161b;
+    --ink: #e7ebef; --muted: #9aa4b0; --faint: #6c7783;
+    --hair: #262c33; --hair-strong: #333b44;
+    --accent: #2dd4bf; --warn: #f59e0b; --warn-bg: #241b0e;
+    --good: #4ade80; --good-bg: #10231a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--serif); line-height: 1.62;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* masthead */
+  .masthead { border-bottom: 2px solid var(--ink); margin-top: 40px;
+    padding-bottom: 10px; display: flex; justify-content: space-between;
+    align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .masthead .brand { font-family: var(--mono); font-size: 12px;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .masthead .status { font-family: var(--mono); font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+
+  h1 { font-family: var(--sans); font-weight: 620; font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;
+    margin: 34px 0 10px; }
+  .dek { font-size: 20px; color: var(--muted); font-style: italic;
+    text-wrap: balance; margin: 0 0 6px; }
+  .byline { font-family: var(--mono); font-size: 11.5px; color: var(--faint);
+    letter-spacing: .04em; margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid var(--hair); }
+
+  h2 { font-family: var(--sans); font-weight: 600; font-size: 13px;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+    margin: 52px 0 6px; display: flex; align-items: baseline; gap: 10px; }
+  h2 .n { font-family: var(--mono); color: var(--faint); font-size: 12px; }
+  h3 { font-family: var(--sans); font-weight: 640; font-size: 20px;
+    letter-spacing: -0.01em; margin: 30px 0 8px; text-wrap: balance; }
+  p { margin: 12px 0; }
+  a { color: var(--accent); }
+  strong { font-weight: 700; }
+  .lead { font-size: 18.5px; }
+  em.term { font-style: normal; font-family: var(--mono); font-size: .88em;
+    background: var(--surface-2); border: 1px solid var(--hair);
+    padding: 1px 6px; border-radius: 4px; }
+
+  /* thesis stat row */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--hair); border: 1px solid var(--hair);
+    border-radius: 10px; overflow: hidden; margin: 26px 0 8px; }
+  .stat { background: var(--surface); padding: 18px 16px; }
+  .stat .k { font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    min-height: 2.4em; }
+  .stat .v { font-family: var(--sans); font-weight: 660; font-size: 30px;
+    letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat .c { font-size: 13px; color: var(--muted); margin-top: 4px;
+    font-family: var(--sans); }
+  .stats-note { font-family: var(--sans); font-size: 12.5px; color: var(--faint);
+    text-align: center; margin: 4px 0 0; }
+
+  /* tables */
+  .tbl-wrap { overflow-x: auto; margin: 18px 0; border: 1px solid var(--hair);
+    border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono);
+    font-size: 13px; font-variant-numeric: tabular-nums; }
+  caption { caption-side: bottom; text-align: left; font-family: var(--sans);
+    font-size: 12.5px; color: var(--muted); padding: 10px 14px 2px;
+    line-height: 1.5; }
+  th, td { padding: 9px 12px; text-align: right; white-space: nowrap;
+    border-bottom: 1px solid var(--hair); }
+  thead th { color: var(--muted); font-weight: 600; font-size: 11px;
+    letter-spacing: .03em; text-transform: uppercase;
+    border-bottom: 1.5px solid var(--hair-strong); }
+  tbody tr:last-child td { border-bottom: none; }
+  th.lbl, td.lbl { text-align: left; font-family: var(--sans);
+    font-weight: 560; color: var(--ink); }
+  td.hi { color: var(--accent); font-weight: 700; }
+  tr.rule-top td { border-top: 1.5px solid var(--hair-strong); }
+  .flat { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+
+  /* callout cards */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin: 22px 0; }
+  .card { border: 1px solid var(--hair); border-radius: 10px; padding: 18px 18px 16px;
+    background: var(--surface); }
+  .card .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 600; margin-bottom: 8px;
+    display: inline-block; padding: 2px 8px; border-radius: 20px; }
+  .card.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 35%, var(--hair)); }
+  .card.warn .tag { color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); }
+  .card.good { background: var(--good-bg); border-color: color-mix(in srgb, var(--good) 35%, var(--hair)); }
+  .card.good .tag { color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
+  .card h4 { font-family: var(--sans); font-size: 16px; margin: 0 0 6px;
+    font-weight: 640; letter-spacing: -.01em; }
+  .card p { font-family: var(--serif); font-size: 15px; margin: 6px 0 0;
+    line-height: 1.5; }
+
+  /* pipeline diagram */
+  figure { margin: 24px 0; }
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    font-family: var(--sans); }
+  .node { flex: 1 1 120px; border: 1px solid var(--hair-strong);
+    border-radius: 9px; padding: 13px 14px; background: var(--surface);
+    min-width: 130px; }
+  .node .stg { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .node .ttl { font-weight: 640; font-size: 15px; margin: 4px 0 3px; }
+  .node .sub { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .arrow { align-self: center; color: var(--faint); font-family: var(--mono);
+    font-size: 20px; padding: 0 10px; }
+  .barred { color: var(--warn); font-weight: 700; }
+
+  /* attribution bar */
+  .attrib { margin: 20px 0; }
+  .attrib .row { display: flex; align-items: center; gap: 12px; margin: 10px 0;
+    font-family: var(--sans); font-size: 14px; }
+  .attrib .rlabel { flex: 0 0 190px; color: var(--muted); }
+  .attrib .track { flex: 1; height: 26px; background: var(--surface-2);
+    border: 1px solid var(--hair); border-radius: 6px; overflow: hidden;
+    position: relative; min-width: 120px; }
+  .attrib .fill { height: 100%; display: flex; align-items: center;
+    justify-content: flex-end; padding-right: 8px; color: #fff;
+    font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  blockquote { margin: 22px 0; padding: 4px 0 4px 20px;
+    border-left: 3px solid var(--accent); font-style: italic;
+    color: var(--ink); font-size: 17px; }
+  blockquote cite { display: block; font-style: normal; font-family: var(--mono);
+    font-size: 11.5px; color: var(--faint); margin-top: 8px; letter-spacing: .03em; }
+
+  .pending { border: 1px dashed var(--hair-strong); border-radius: 10px;
+    padding: 20px; background: var(--surface-2); }
+  .pending .badge { font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--warn); font-weight: 600; }
+  .pending .badge::before { content: "◍ "; }
+
+  hr.sec { border: none; border-top: 1px solid var(--hair); margin: 44px 0; }
+  .foot { font-family: var(--sans); font-size: 12.5px; color: var(--faint);
+    margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--hair);
+    line-height: 1.6; }
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: 1fr; }
+    .cards { grid-template-columns: 1fr; }
+    .attrib .rlabel { flex-basis: 120px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <span class="brand">Working paper · Radiology AI · follow-up</span>
+    <span class="status">EDIT 2 — perception/reasoning split</span>
+  </div>
+
+  <h1>Does structured prompting improve perception, or just make the model report more?</h1>
+  <p class="dek">Splitting a radiology VLM into two independent calls — see, then diagnose — to locate where the error actually is.</p>
+  <p class="byline">gemini-2.5-flash (API) · MedGemma-4B-8bit (local) · IU X-Ray test split, n = 754 · CheXbert reference · hierarchy-aware scoring</p>
+
+  <h2><span class="n">§0</span> The result in one line</h2>
+  <p class="lead">On the fair normal-vs-abnormal decision, Gemini's accuracy is <strong>flat at ~0.65</strong> whether the prompt is unstructured, structured, or perception-only. Structuring does not help the model <em>see</em> better — it makes it <em>report</em> more. And when perception is isolated from reasoning, the ceiling turns out to be a <strong>perception</strong> ceiling.</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="k">evidence-first<br>(unstructured, 1 pass)</div>
+      <div class="v">0.654</div>
+      <div class="c">binary accuracy</div>
+    </div>
+    <div class="stat">
+      <div class="k">evidence-structured<br>(machine-readable table)</div>
+      <div class="v">0.635</div>
+      <div class="c">binary accuracy</div>
+    </div>
+    <div class="stat">
+      <div class="k">perception-only<br>(Stage A, diagnosis forbidden)</div>
+      <div class="v">0.655</div>
+      <div class="c">binary accuracy</div>
+    </div>
+  </div>
+  <p class="stats-note">Three prompts, three very different F1 scores — one unchanged decision. (Gemini, n=754, true abnormal rate 0.561.)</p>
+
+  <h2><span class="n">§1</span> The question this answers</h2>
+  <p>The prior draft (§3.3) showed that making the evidence-first prompt a machine-readable table raised every aggregate F1 — but for Gemini that rise was an <em>F1 illusion</em>: it flagged 76% of studies abnormal when only 56% are, so precision collapsed and accuracy did not move. The prompt changed the <strong>operating point</strong>, not the diagnosis.</p>
+  <p>That left an open question, put sharply in review:</p>
+  <blockquote>
+    Does the structured prompt actually improve visual perception, or does it simply encourage the model to report more findings?
+    <cite>— reviewer follow-up, "Suggestion #1b"</cite>
+  </blockquote>
+  <p>A single-pass prompt cannot answer this, because perception and reasoning happen in the same forward pass — a wrong answer can't be charged to bad seeing versus bad reasoning. So we separated them.</p>
+
+  <h2><span class="n">§2</span> Method — two independent calls</h2>
+  <p>Rather than one prompt that produces findings <em>and</em> a diagnosis together, the study is split into two calls that run in sequence but never share a context:</p>
+
+  <figure>
+    <div class="flow">
+      <div class="node">
+        <div class="stg">Stage A · perception</div>
+        <div class="ttl">Image → findings</div>
+        <div class="sub">Per-finding present / absent / uncertain. Diagnosis <span class="barred">forbidden</span>.</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="node">
+        <div class="stg">freeze</div>
+        <div class="ttl">Findings as text</div>
+        <div class="sub">Serialized. The image is <span class="barred">dropped</span>.</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="node">
+        <div class="stg">Stage B · reasoning</div>
+        <div class="ttl">Findings → diagnosis</div>
+        <div class="sub">Text-only call. No way to re-examine the film.</div>
+      </div>
+    </div>
+    <caption>Scoring Stage A measures perception directly. Scoring Stage B measures reasoning <em>conditioned on whatever was actually perceived</em>. Together with the single-pass score, the two numbers attribute error to perception, reasoning, or both. Reproducible via <code>scripts/35_run_twostage.py</code> + <code>scripts/36_eval_twostage.py</code>.</caption>
+  </figure>
+
+  <h2><span class="n">§3</span> Results — Gemini</h2>
+
+  <h3>Answer 1: structuring reports more, it does not see better</h3>
+  <div class="tbl-wrap">
+    <table>
+      <caption><strong>Table 1.</strong> Operating point across representations (CheXbert ref, hierarchy-aware, uncertain=positive). The three shaded accuracies are statistically flat; what moves is findings/study, %-flagged, recall and precision — i.e. how much the model commits, not how well it decides.</caption>
+      <thead>
+        <tr>
+          <th class="lbl">representation</th>
+          <th>13-cls F1</th><th>3-grp F1</th><th>bin F1</th>
+          <th>find/study</th><th>% abn</th>
+          <th>bin P</th><th>bin R</th><th>bin acc</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="lbl">evidence-first</td>
+          <td>0.367</td><td>0.482</td><td>0.585</td>
+          <td>1.00</td><td>27%</td>
+          <td>0.893</td><td>0.435</td><td class="flat">0.654</td>
+        </tr>
+        <tr>
+          <td class="lbl">evidence-structured</td>
+          <td>0.404</td><td>0.567</td><td>0.724</td>
+          <td>2.31</td><td>76%</td>
+          <td>0.629</td><td>0.851</td><td class="flat">0.635</td>
+        </tr>
+        <tr>
+          <td class="lbl">perception-only (A)</td>
+          <td>0.396</td><td>0.567</td><td>0.730</td>
+          <td>2.47</td><td>72%</td>
+          <td>0.651</td><td>0.832</td><td class="flat">0.655</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Going from unstructured to structured, F1 climbs (0.585 → 0.724) and recall nearly doubles (0.44 → 0.83). But findings/study goes 1.0 → 2.3, %-flagged 27% → 76%, precision <em>falls</em> 0.89 → 0.63, and <strong>accuracy does not improve</strong> (0.654 → 0.635). Forbidding the diagnosis entirely (perception-only) reproduces the same picture. The extra F1 is extra reporting.</p>
+
+  <h3>Answer 2: the error is perception, not reasoning</h3>
+  <p>With perception isolated in Stage A and reasoning isolated in Stage B, the two failure modes separate cleanly:</p>
+
+  <div class="attrib">
+    <div class="row">
+      <div class="rlabel">Perception ceiling (A)</div>
+      <div class="track"><div class="fill" style="width:65.5%; background:var(--accent);">0.655</div></div>
+    </div>
+    <div class="row">
+      <div class="rlabel">+ reasoning (Stage B)</div>
+      <div class="track"><div class="fill" style="width:67.4%; background:var(--accent);">0.674</div></div>
+    </div>
+    <div class="row">
+      <div class="rlabel">Reasoning fidelity</div>
+      <div class="track"><div class="fill" style="width:83.3%; background:var(--good);">0.833</div></div>
+    </div>
+  </div>
+  <p>Given the findings, the text-only reasoning step is faithful: it reproduces the Stage-A abnormal/normal call <strong>83%</strong> of the time, its over-calling collapses to a well-calibrated 55%-flagged rate (true 56%), and accuracy even nudges up to 0.674. Crucially:</p>
+
+  <div class="cards">
+    <div class="card warn">
+      <span class="tag">perception-bound</span>
+      <h4>77% of triage errors</h4>
+      <p>Of Stage B's 246 wrong calls, 77% were <strong>already wrong in Stage A</strong> — the model never saw the finding, so no amount of reasoning could recover it.</p>
+    </div>
+    <div class="card good">
+      <span class="tag">reasoning is not the bottleneck</span>
+      <h4>a coin-flip override</h4>
+      <p>On the 126 cases where reasoning overrides perception's call, it is right just <strong>56%</strong> of the time — it neither rescues nor wrecks the diagnosis. The bottleneck is vision.</p>
+    </div>
+  </div>
+
+  <h2><span class="n">§4</span> A measurement-discipline catch</h2>
+  <p>The first scoring pass read Stage B by mining its free-text <em>explanation</em>, and reported 98%-flagged / 0.572 accuracy — a reasoning collapse that never happened. The cause: the Stage-B explanation dutifully restates every finding it was handed ("no cardiomegaly, no edema, no consolidation…"), and a naïve extractor scrapes those <em>negated</em> names as positives. Scoring the model's <strong>committed primary diagnosis</strong> instead gives the honest 55%-flagged / 0.674 above. Same lesson as the rest of the paper: the operationalization can manufacture the artifact, and only decomposition reveals it.</p>
+
+  <h2><span class="n">§5</span> The same experiment on the local medical model</h2>
+  <div class="pending" id="medgemma">
+    <div class="badge">MedGemma-4B run in progress</div>
+    <p style="font-family:var(--sans); font-size:14.5px; margin-top:10px;">The two-stage pipeline is running on MedGemma-4B (8-bit, local via MLX) so the perception-vs-reasoning attribution can be reported <em>per model</em> — matching the paper's finding that the same prompt edit had opposite outcomes on Gemini and MedGemma. Because §3.3 showed structuring was a <strong>genuine</strong> gain for MedGemma (precision and recall rose together), the prediction here is the mirror image of Gemini: more of MedGemma's improvement should trace to <em>perception</em>. This section will be filled in from <code>36_eval_twostage.py</code> when the run completes.</p>
+  </div>
+
+  <h2><span class="n">§6</span> What this adds to the paper</h2>
+  <p>The prior draft could say <em>"structured prompting changes the operating point."</em> This turns that into a mechanism and a location:</p>
+  <p>— <strong>Mechanism.</strong> For Gemini the structured prompt raises F1 by increasing how much the model commits, not how well it perceives; accuracy is invariant to the reformatting.</p>
+  <p>— <strong>Location.</strong> Isolating the two stages shows the ceiling is a perception ceiling: ~⅘ of triage error originates in what the model failed to see, and an error-free reasoning step cannot buy it back. This is a concrete, testable claim reviewers asked for, and it strengthens the paper's central thesis — a rising F1 must be decomposed before it is called an improvement — by showing exactly which faculty the improvement did, and did not, touch.</p>
+
+  <p class="foot">
+    All numbers regenerate from the analysis scripts on the public IU X-Ray test split (n=754), CheXbert reference, hierarchy-aware scoring, uncertain=positive — identical conventions to the main results section. Two-stage inference: <code>scripts/35_run_twostage.py</code>. Scoring &amp; attribution: <code>scripts/36_eval_twostage.py</code>. Comparative claims only; not a statement of clinical readiness.
+  </p>
+
+</div>
+
+</body></html>
